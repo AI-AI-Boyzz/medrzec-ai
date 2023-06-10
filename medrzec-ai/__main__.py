@@ -9,16 +9,6 @@ QUESTIONS = [
     "How would you describe your role at your company?",
     "What is your most common work setup?",
     "How much can you relate to the following statement: I like working remotely.",
-    "How much can you relate to the following statement: I'm able to disconnect from work mentally at the end of the day.",
-    "How much can you relate to the following statement: I want to grow professionally and learn new skills at work.",
-    "How much can you relate to the following statement: When I am assigned tasks, I can get them done easily as I am a self-starter and independent in my work habits.",
-    "How much can you relate to the following statement: I feel I am effective at self-organizing my work.",
-    "How much can you relate to the following statement: I feel that the course of my day depends on me.",
-    "How much can you relate to the following statement: I can be productive anywhere - the place doesn't matter.",
-    "How much can you relate to the following statement: I am easily able to manage projects remotely.",
-    "How much can you relate to the following statement: I feel comfortable with running the team remotely.",
-    "Imagine you need to ask your teammate a question about some project details. What do you do?",
-    "Imagine you need to ask your employee a question about some project details. What do you do?",
     # TODO: This is just a placeholder, we probably shouldn't hardcode questions like this
 ]
 
