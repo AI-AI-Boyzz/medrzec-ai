@@ -22,7 +22,7 @@ QUESTIONS = [
     # TODO: This is just a placeholder, we probably shouldn't hardcode questions like this
 ]
 
-NEWLINE = '\n'
+NEWLINE = "\n"
 OBJECTIVE = f"""
 Find out the human's answers to the following questions:
 {NEWLINE.join(QUESTIONS)}
