@@ -1,13 +1,21 @@
-import dotenv
+from dotenv import load_dotenv
 from langchain.llms import OpenAI
+from langchain.chains import ConversationChain
+from langchain.chains.conversation.memory import ConversationBufferMemory
 
 
 def main():
-    dotenv.load_dotenv()
+    load_dotenv()
 
     llm = OpenAI()
-    text = "What would be a good company name for a company that makes colorful socks?"
-    print(llm(text))
+    conversation = ConversationChain(
+        llm=llm,
+        memory=ConversationBufferMemory(),
+    )
+
+    while True:
+        response = conversation(input("> "))["response"]
+        print(response)
 
 
 if __name__ == "__main__":
