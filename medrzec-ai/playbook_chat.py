@@ -35,7 +35,7 @@ class PlaybookChat:
             verbose=True,
         )
 
-    def start_conversation(self, user_score: str) -> str:
+    def start_conversation(self, user_score: int) -> str:
         return self.agent.run(
             input=f"""Help the user by querying the playbook and answering their questions. \
 The user is a People Manager at a company. \
@@ -47,7 +47,9 @@ Their score was calculated to {user_score}%.
 Remote work readiness scale:
 Low: 0-50%
 Medium: 51-90%
-High: 91-100%"""
+High: 91-100%
+
+End the response with a call to action encouraging the user to ask insightful questions."""
         )
 
     def submit_message(self, text: str) -> str:
