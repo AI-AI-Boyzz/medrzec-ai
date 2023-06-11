@@ -51,19 +51,19 @@ async def on_message(message, say):
 
         if match := re.search(r"Score: (\d+)", answer, re.IGNORECASE):
             user_score = int(match[1])
-            message = f"Done, your score is {user_score}%! "
+            message = f"*Your Remote Work Score is {user_score}%!* "
 
             if user_score > 90:
-                message += f"""*Your Remote Work Score is {user_score}%!* 🧠
+                message += """🧠
 You are a REMOTE PRO — super well done! ⭐ ⭐ ⭐ Keep rocking!"""
 
             elif user_score > 50:
-                message += f"""*Your Remote Work Score is {user_score}%!*   👏👏👏
+                message += f"""👏 👏 👏
 You are familiar with remote work but need more guidance to feel 100% comfortable in it. Let us help you! 🏗️
 {PLAYBOOK_UPSELL}"""
 
             else:
-                message += f"""*Your Remote Work Score is {user_score}%!* 😅
+                message += f"""😅
 You need more assistance with remote work to feel 100% comfortable in it. Let us help you! 🏗️
 {PLAYBOOK_UPSELL}"""
 
