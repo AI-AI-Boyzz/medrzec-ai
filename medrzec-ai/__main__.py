@@ -11,6 +11,7 @@ from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
 
 PLAYBOOK_URL = "https://remotehow.notion.site/Remote-First-Work-Playbook-Template-b7a8b8437a3e4c22b68bc20e18bbd34d"
+PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on #remotework, and improve your score.>\nLet’s dive in 🚀"
 
 dotenv.load_dotenv()
 
@@ -53,21 +54,18 @@ async def on_message(message, say):
             message = f"Done, your score is {user_score}%! "
 
             if user_score > 90:
-                message += """You are Fred Astaire of remote work - you know what you are doing and you act efficiently, bravo! \
-🥇 See below some advice on how you can share your experience in the organization to increase the remote awareness of your colleagues. \
-To their and your greater comfort of work. 🤝🏻 -> (Ideas for skills sharing)"""
+                message += f"""*Your Remote Work Score is {user_score}%!* 🧠
+You are a REMOTE PRO — super well done! ⭐ ⭐ ⭐ Keep rocking!"""
 
             elif user_score > 50:
-                message += f"""You are familiar with remote work but need clear guidance to feel comfortable in it. \
-💃🏻 Let us help you! See the exercise below to improve your remote skills⬇ \
-e.g. -> (some exercises for being more async and focused), what more? Use tips from this playbook to improve your score: {PLAYBOOK_URL}"""
+                message += f"""*Your Remote Work Score is {user_score}%!*   👏👏👏
+You are familiar with remote work but need more guidance to feel 100% comfortable in it. Let us help you! 🏗️
+{PLAYBOOK_UPSELL}"""
 
             else:
-                message += f"""Finding yourself in remote work is a challenge for you. \
-Don't worry! Remote skills training and following good practices can turn your remote work nightmare into a good experience leading to a work-life balance 🧘🏻‍♂️ \
-See the exercise below to improve your remote skills⬇ e.g. -> write down your typical day plan. Visualize you must cancel all the meetings - what happens? \
-->do a practice of how to write messages effectively - see our recommendation on the topic (redirect to Remote Institute about it) etc. \
-Use tips from this playbook to improve your score: {PLAYBOOK_URL}"""
+                message += f"""*Your Remote Work Score is {user_score}%!* 😅
+You need more assistance with remote work to feel 100% comfortable in it. Let us help you! 🏗️
+{PLAYBOOK_UPSELL}"""
 
             await say(message)
 
