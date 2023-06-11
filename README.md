@@ -24,3 +24,9 @@ Run the project
 ```
 python -m medrzec-ai
 ```
+
+You may want to update the Pinecone database
+
+```
+python update_pinecone.py "./Remote-First Work Playbook.md"
+```

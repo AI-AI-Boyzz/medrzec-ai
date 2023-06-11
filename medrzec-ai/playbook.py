@@ -20,13 +20,13 @@ def playbook_chat(user_score: str):
         return [doc.page_content for doc in docs]
 
     @tool
-    def playbook_answers(query: str) -> str:
+    def query_playbook(query: str) -> str:
         """Searches the People Managers guide for the query."""
         return "\n".join(get_relevant_fragments(query))
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     agent = initialize_agent(
-        [playbook_answers],
+        [query_playbook],
         ChatOpenAI(temperature=0.9, model="gpt-4"),
         AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
         memory=memory,
@@ -45,6 +45,8 @@ Remote work readiness scale:
 Low: 0-50%
 Medium: 51-90%
 High: 91-100%
+
+You can use Markdown when replying.
 """
     )
 
