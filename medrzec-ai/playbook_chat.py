@@ -29,17 +29,17 @@ class PlaybookChat:
 
         self.agent = initialize_agent(
             tools,
-            ChatOpenAI(temperature=0.9, model="gpt-4", verbose=True),
+            ChatOpenAI(temperature=0.9, model="gpt-4"),
             AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
             memory=memory,
             verbose=True,
         )
 
-    def start_conversation(self, user_score: int) -> str:
+    def start_conversation(self, user_score: str) -> str:
         return self.agent.run(
             input=f"""Help the user by querying the playbook and answering their questions. \
 The user is a People Manager at a company. \
-You are a conversational AI.
+You are a very conversational AI. Keep the conversation going.
 
 The user has responded to questions regarding their remote work. \
 Their score was calculated to {user_score}%.

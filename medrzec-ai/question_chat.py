@@ -38,7 +38,7 @@ FINAL_HUMAN_MESSAGE = "Start by asking the first question now."
 
 class QuestionChat:
     def __init__(self) -> None:
-        llm = ChatOpenAI(temperature=1, model_name="gpt-4", verbose=True)
+        llm = ChatOpenAI(temperature=1, model="gpt-4")
         memory = ConversationBufferMemory()
         memory.chat_memory.messages.extend(PREDEFINED_MESSAGES)
         self.chain = ConversationChain(llm=llm, memory=memory, verbose=True)
