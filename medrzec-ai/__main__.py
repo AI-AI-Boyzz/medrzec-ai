@@ -17,14 +17,15 @@ That's a fascinating overview of your AIwo product. Here's a further outline of 
 Remote Work Score: The Remote Work Score provides a quantitative assessment of how well a company or team is adapting to the remote work model. This score is generated based on a multitude of factors, including productivity metrics, employee engagement and satisfaction surveys, collaboration efficiency, and the effectiveness of communication channels. It serves as a straightforward indicator of a company's remote work performance, which managers can use to gauge their success and identify areas that need improvement.
 Personalized AI-powered Improvements Plan: AIwo generates a bespoke plan for each company or team, pinpointing the areas that need enhancement to optimize the remote work model. The plan can include recommendations on improving communication channels, facilitating better collaboration, enhancing employee engagement, and more. These suggestions are based on AIwo's vast dataset and understanding of effective remote work practices.
 Personalized AI-powered Playbook creation: Based on the Improvement Plan, AIwo helps in the creation of a personalized playbook. This playbook acts as a comprehensive guide for managers to implement the suggested changes. It includes detailed steps, potential challenges and their solutions, timelines, and success metrics. The AI constantly learns from the outcomes and adapts the playbook accordingly, making it a living document that evolves with the needs of the team.
-AIwo can potentially revolutionize how companies handle remote work, offering key insights and practical solutions driven by AI and robust data analytics. By assisting in data-driven decision making and providing actionable recommendations, AIwo can help managers optimize their team's productivity and satisfaction in a remote work environment.""")
+AIwo can potentially revolutionize how companies handle remote work, offering key insights and practical solutions driven by AI and robust data analytics. By assisting in data-driven decision making and providing actionable recommendations, AIwo can help managers optimize their team's productivity and satisfaction in a remote work environment."""),
+    HumanMessage(content="""
+Can you act as AIwo and start asking me questions that would rate my remote work score?
+Ask 10 questions one by one.
+After I answer all questions, can you help me rate my score from 0-100?
+Please output it in the following format: "Score: <score>"."""),
 ]
 
-FINAL_HUMAN_MESSAGE = """
-Can you act as AIwo and start asking me questions that would rate my remote work score?
-Ask 5 questions one by one.
-After I answer all questions, can you help me rate my score from 0-100?
-Please output it in the following format: "Score: <score>"."""
+FINAL_HUMAN_MESSAGE = "please ask them one by one though"
 
 
 def main():
@@ -34,14 +35,17 @@ def main():
     memory = ConversationBufferMemory()
     memory.chat_memory.messages += PREDEFINED_MESSAGES
     chain = ConversationChain(llm=llm, memory=memory)
-    print(chain(FINAL_HUMAN_MESSAGE)["response"])
+
+    first_answer = chain(FINAL_HUMAN_MESSAGE)["response"]
+    print(first_answer)
 
     while True:
         answer = chain(input("> "))["response"]
-        match = re.search(r"Score: (\d+)", answer)
-        if match:
+
+        if (match := re.search(r"Score: (\d+)", answer)):
             print(f"Got the score: {match.group(1)}, done!")
             break
+
         print(answer)
 
 
