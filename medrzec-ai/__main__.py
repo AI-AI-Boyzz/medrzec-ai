@@ -1,11 +1,12 @@
 import re
 
 from dotenv import load_dotenv
-from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import AIMessage, HumanMessage
+
+from . import playbook
 
 PREDEFINED_MESSAGES = [
     HumanMessage(
@@ -49,11 +50,14 @@ def main():
     while True:
         answer = chain(input("> "))["response"]
 
-        if match := re.search(r"Score: (\d+)", answer):
-            print(f"Got the score: {match.group(1)}, done!")
+        if match := re.search(r"Score: (\d+)", answer, re.IGNORECASE):
+            score = match[1]
+            print(f"Done, your score is {score}%!")
             break
 
         print(answer)
+
+    playbook.playbook_chat(score)
 
 
 if __name__ == "__main__":

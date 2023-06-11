@@ -10,37 +10,47 @@ from langchain.prompts import PromptTemplate
 from langchain.tools import tool
 from langchain.vectorstores import Pinecone
 
-PROMPT = PromptTemplate(
-    input_variables=["question", "chat_history"],
-    template="""System: The following is a conversation between a user and an AI. \
-The user is a People Manager at a company. \
-The AI finds asnwers to their questions by querying the playbook. \
-It is conversational.
 
-{chat_history}
-Human: {question}
-AI: """,
-)
+def playbook_chat(user_score: str):
+    pinecone.init(os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
 
+    def get_relevant_fragments(query: str) -> list[str]:
+        docsearch = Pinecone.from_existing_index("playbook", OpenAIEmbeddings())
+        docs = docsearch.similarity_search(query)
+        return [doc.page_content for doc in docs]
 
-pinecone.init(os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
+    @tool
+    def playbook_answers(query: str) -> str:
+        """Searches the People Managers guide for the query."""
+        return "\n".join(get_relevant_fragments(query))
 
-
-def get_relevant_fragments(query: str) -> list[str]:
-    docsearch = Pinecone.from_existing_index("playbook", OpenAIEmbeddings())
-    docs = docsearch.similarity_search(query)
-    return [doc.page_content for doc in docs]
-
-
-def playbook_chat():
-    llm = ChatOpenAI(temperature=0.9)
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    docsearch = Pinecone.from_existing_index("playbook", OpenAIEmbeddings())
-    qa = ConversationalRetrievalChain.from_llm(
-        llm, docsearch.as_retriever(), memory=memory, verbose=True
+    agent = initialize_agent(
+        [playbook_answers],
+        ChatOpenAI(temperature=0.9, model="gpt-4"),
+        AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+        memory=memory,
+        verbose=True,
     )
+
+    answer = agent.run(
+        input=f"""Help the user by querying the playbook and answering their questions. \
+The user is a People Manager at a company. \
+You are a conversational AI.
+
+The user has responded to questions regarding their remote work. \
+Their score was calculated to {user_score}%.
+
+Remote work readiness scale:
+Low: 0-50%
+Medium: 51-90%
+High: 91-100%
+"""
+    )
+
+    print(answer)
 
     while True:
         question = input("> ")
-        answer = qa({"question": question})["answer"]
+        answer = agent.run(input=question)
         print(answer)
