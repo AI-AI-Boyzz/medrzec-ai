@@ -25,11 +25,11 @@ AIwo can potentially revolutionize how companies handle remote work, offering ke
     ),
     HumanMessage(
         content="""\
-Can you act as AIwo and start asking me questions that would rate my remote work score?
-Ask me exactly 10 questions one by one.
-When asking questions cover all work-related aspects from this list of areas: Communication, Collaboration, Leadership, Job Satisfaction, Company Culture, Transparency, Well-being, Adaptation, Work management.
-After I answer all questions, can you help me rate my score from 0-100?
-Please output it in the following format: "Score: <score>"."""
+Can you act as AIwo and start asking me questions to assess my remote work conditions?
+Ask me 10 questions one by one.
+Please ensure the questions cover all work-related aspects from this list of areas: Communication, Collaboration, Leadership, Job Satisfaction, Company Culture, Transparency, Well-being, Adaptation, Work management.
+After I answer your questions, can you help me compute a score from 0-100 based on my responses?
+Please output it in the following format: "Score: <score>."""
     ),
 ]
 
