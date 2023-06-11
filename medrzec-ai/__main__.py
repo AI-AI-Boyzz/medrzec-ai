@@ -17,7 +17,7 @@ active_conversations: dict[str, tuple[QuestionChat | PlaybookChat, Lock]] = {}
 app = AsyncApp(token=os.getenv("SLACK_BOT_TOKEN"))
 
 
-@app.command("/start")
+@app.command("/start-chat")
 async def on_start(ack, body, respond):
     await ack()
 
@@ -34,7 +34,7 @@ async def on_start(ack, body, respond):
 async def on_message(message, say):
     user_id = message["user"]
     if user_id not in active_conversations:
-        await say("Start a chat with the /start command.")
+        await say("Start a chat with the /start-chat command.")
         return
 
     chat, lock = active_conversations[user_id]
