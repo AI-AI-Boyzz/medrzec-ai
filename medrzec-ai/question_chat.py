@@ -16,7 +16,7 @@ Please welcome the user with the message with markdown formatting to make it eas
 
 I will ask you 10 questions, in 8 different areas such as: Communication, Collaboration, Leadership, or Well-being. 
 
-You can start by briefly describing your job and company, or jump right away to Remote Work Score questions.
+You can start by briefly describing your job and company, or jump right away to Remote Work Score questions."
 
 Wait for the response, and then continue asking further questions.
 
