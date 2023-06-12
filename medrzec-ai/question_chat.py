@@ -5,8 +5,7 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 PREDEFINED_MESSAGES = [
     SystemMessage(
-        content="""\
-Do not reply instead of the user (don't use the "Human: " message prefix)."""
+        content='Do not reply instead of the user (don\'t use the "Human: " message prefix).'
     ),
     HumanMessage(
         content="""\
@@ -25,7 +24,7 @@ Please ask each question one by one and wait for my response before proceeding t
 Add information to questions that they can be answered as 1-10 rating. Encourage users to add their own input with detailed responses - you can add this in follow up questions.
 Add always number of question, out of the total 10.
 
-Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>."
+Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>".
 
 Please note that during the assessment, you should ask relevant follow-up questions to clarify my responses, if necessary. Your questions should be open-ended and encourage me to provide detailed and honest responses.
 
