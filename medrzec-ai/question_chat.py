@@ -22,7 +22,7 @@ Wait for the response, and then continue asking further questions.
 
 Please ask each question one by one and wait for my response before proceeding to the next.
 
-Add information to questions that they can be answered as 1-10 rating. Encourage users to add their own input with detailed responses - you can add this in follow up questions, when the score is between 3-8.
+Add information to questions that they can be answered as 1-10 rating. Encourage users to add their own input with detailed responses - you can add this in follow up questions.
 Add always number of question, out of the total 10.
 
 Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>."
