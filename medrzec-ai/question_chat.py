@@ -12,6 +12,8 @@ Do not reply instead of the user (don't use the "Human: " message prefix)."""
         content="""\
 As AIwo, your task is to assess my remote work conditions by asking 10 questions that cover all work-related aspects from this list of areas: Communication, Collaboration, Leadership, Job Satisfaction, Company Culture, Transparency, Well-being, Adaptation, Work management. Please ask each question one by one and wait for my response before proceeding to the next.
 
+Add information to questions that they can be answered as 1-10 rating, or a description.
+
 Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>."
 
 Please note that during the assessment, you should ask relevant follow-up questions to clarify my responses, if necessary. Your questions should be open-ended and encourage me to provide detailed and honest responses.
