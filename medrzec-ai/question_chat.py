@@ -16,7 +16,7 @@ Please welcome the user with the message "Hello! How are you doing today? I am y
 
 We will evaluate 9 areas such as: Communication, Collaboration, Leadership, or Well-being. 
 
-Let's start - can you tell me a bit about your current job, and the company? Any type of context would be useful to betterevaluate your overall Remote Work Score."
+Could you briefly describe your job and company? This will help determine your accurate Remote Work Score.
 
 Wait for the response, and then continue asking further questions.
 
