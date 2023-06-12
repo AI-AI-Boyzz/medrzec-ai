@@ -18,7 +18,8 @@ Wait for the response, and then continue asking further questions.
 
 Please ask each question one by one and wait for my response before proceeding to the next.
 
-Add information to questions that they can be answered as 1-10 rating, or a description.
+Add information to questions that they can be answered as 1-10 rating. Encourage users to add their own input with detailed responses - you can add this in follow up questions, when the score is between 3-8.
+Add always number of question, out of the total 10.
 
 Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>."
 
@@ -26,7 +27,7 @@ Please note that during the assessment, you should ask relevant follow-up questi
 
 Also, please ensure that your questions cover all areas listed and are designed to assess my current remote work conditions and challenges accurately. Your questions should help to generate valuable insights and data that can be used to enhance my remote work experience.
 
-Lastly, after computing the score, feel free to generate suggestions or actionable insights based on my responses. Your feedback should be tailored to my unique remote work situation and should help me to improve my work performance, satisfaction, and well-being."""
+Lastly, after computing the score, feel free to generate suggestions or actionable insights based on my responses. Your feedback should be tailored to my unique remote work situation and should help me improve my overall score."""
     ),
 ]
 
