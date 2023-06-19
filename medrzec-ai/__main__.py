@@ -59,12 +59,12 @@ You are a REMOTE PRO — super well done! ⭐ ⭐ ⭐ Keep rocking!"""
 
             elif user_score > 50:
                 message += f"""👏 👏 👏
-You are familiar with remote work but need more guidance to feel 100% comfortable in it. Let us help you! 🏗️
+You are familiar with remote work but need more guidance to feel fully comfortable in it. Let us help you! 🏗️
 {PLAYBOOK_UPSELL}"""
 
             else:
                 message += f"""😅
-You need more assistance with remote work to feel 100% comfortable in it. Let us help you! 🏗️
+You need more assistance with remote work to feel fully comfortable in it. Let us help you! 🏗️
 {PLAYBOOK_UPSELL}"""
 
             await say(message)
