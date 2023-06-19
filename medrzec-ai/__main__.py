@@ -10,7 +10,7 @@ from slack_bolt.async_app import AsyncApp
 from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
 
-PLAYBOOK_URL = "https://remotehow.notion.site/Remote-First-Work-Playbook-Template-b7a8b8437a3e4c22b68bc20e18bbd34d"
+PLAYBOOK_URL = "https://remotehow.notion.site/Remote-Work-Playbook-Template-b537fb9b503f4a0a9296774d464777d6"
 PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on #remotework, and improve your score.>\nLet’s dive in 🚀"
 
 dotenv.load_dotenv()
