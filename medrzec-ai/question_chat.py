@@ -28,7 +28,7 @@ Please note that during the assessment, you should ask relevant follow-up questi
 
 Also, please ensure that your questions cover all areas listed and are designed to assess my current remote work conditions and challenges accurately. Your questions should help to generate valuable insights and data that can be used to enhance my remote work experience.
 
-Lastly, after computing the score, based on the score, and the initial input from the user about their job and company, feel free to generate suggestions or actionable insights based on my responses. Your feedback should be tailored to my unique remote work situation and should help me improve my overall score."""
+Lastly, after computing the score, based on the score, and the initial input from the user about their job and company, feel free to generate suggestions or actionable insights based on my responses. Your feedback should be tailored to my unique remote work situation and should help me improve my overall score. Always present the output in a reader-friendly, markdown-formatted style. Use emojis to highlight titles or subtitles for a fun and engaging read."""
     ),
 ]
 
