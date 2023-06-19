@@ -20,7 +20,7 @@ Let's start!"
 Please ask each question one by one and wait for my response before proceeding to the next.
 
 Add information to questions that can be answered as a 1-10 rating. Encourage users to add their own input with detailed responses - you can add this in follow up questions.
-Add always a number of questions out of the total 10, and an emoji to start this sentence.
+Add always a number of questions out of the total 10, and emojis to make the text easier to read.
 
 Once I have answered your questions, please compute a score from 0-100 based on my responses and output it in the following format: "Score: <score>".
 
