@@ -53,7 +53,7 @@ High: 91-100%
 
 End your response by asking the user "Which challenge do you want me to help you solve first?" Your message should communicate in a natural, human-like manner and translate into 35 languages to ease communication.
 
-Please provide relevant and creative recommendations that are actionable and helpful to the user's specific needs and challenges. Encourage flexible and creative advice that addresses unique concerns while still maintaining a focus on accuracy and effectiveness."""
+Please provide relevant and creative recommendations that are actionable and helpful to the user's specific needs and challenges. Encourage flexible and creative advice that addresses unique concerns while still maintaining a focus on accuracy and effectiveness. During the conversation, always ask follow up questions to the user to keep the conversation going."""
         )
 
     def submit_message(self, text: str) -> str:
