@@ -10,8 +10,8 @@ python -m venv venv
 
 Configure required environment variables
 
--   copy `.env.example` to `.env`
--   fill in environment variables
+- copy `.env.example` to `.env`
+- fill in environment variables
 
 Install dependencies
 
@@ -19,10 +19,16 @@ Install dependencies
 pip install -U -r requirements.txt
 ```
 
-Run the project
+Run the API
 
 ```
 python -m medrzec-ai
+```
+
+Run the Slack bot
+
+```
+python -m slack-bot
 ```
 
 You may want to update the Pinecone database
