@@ -6,6 +6,7 @@ from uuid import uuid4
 import dotenv
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .playbook_chat import PlaybookChat
@@ -17,6 +18,7 @@ PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on
 active_conversations: dict[str, tuple[QuestionChat | PlaybookChat, Lock]] = {}
 
 app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
 
 
 class StartChatResponse(BaseModel):
