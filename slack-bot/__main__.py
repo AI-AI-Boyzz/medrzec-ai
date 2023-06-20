@@ -6,6 +6,11 @@ import httpx
 from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 from slack_bolt.async_app import AsyncApp
 
+
+class RequestException(Exception):
+    pass
+
+
 dotenv.load_dotenv()
 
 user_chat_ids: dict[str, str] = {}
@@ -17,15 +22,22 @@ client = httpx.AsyncClient(base_url=os.getenv("API_BASE_URL"), timeout=60)
 async def start_chat() -> tuple[str, str]:
     response = await client.post("/start-chat")
     json = response.json()
+
+    if response.status_code != 200:
+        raise RequestException(json["detail"])
+
     return json["chat_id"], json["message"]
 
 
 async def send_message(chat_id: str, user_message: str) -> list[str]:
-    async with httpx.AsyncClient(base_url=os.getenv("API_BASE_URL")) as client:
-        response = await client.post(
-            "/send-message", json={"chat_id": chat_id, "user_message": user_message}
-        )
+    response = await client.post(
+        "/send-message", json={"chat_id": chat_id, "user_message": user_message}
+    )
     json = response.json()
+
+    if response.status_code != 200:
+        raise RequestException(json["detail"])
+
     return json["messages"]
 
 
@@ -33,7 +45,12 @@ async def send_message(chat_id: str, user_message: str) -> list[str]:
 async def on_start(ack, body, respond):
     await ack()
 
-    chat_id, answer = await start_chat()
+    try:
+        chat_id, answer = await start_chat()
+    except RequestException as e:
+        await respond(str(e))
+        return
+
     user_chat_ids[body["user_id"]] = chat_id
 
     await respond(answer)
@@ -47,12 +64,14 @@ async def on_message(message, say):
         await say("Start a chat with the `/start-chat` command.")
         return
 
-    answer, score_message = await send_message(user_chat_ids[user_id], message["text"])
+    try:
+        messages = await send_message(user_chat_ids[user_id], message["text"])
+    except RequestException as e:
+        await say(str(e))
+        return
 
-    if score_message is not None:
-        await say(score_message)
-
-    await say(answer)
+    for message in messages:
+        await say(message)
 
 
 async def main():

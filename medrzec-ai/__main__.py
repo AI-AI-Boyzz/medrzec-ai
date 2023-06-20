@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import dotenv
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from .playbook_chat import PlaybookChat
@@ -45,12 +45,12 @@ async def start_chat(conversation_id: str) -> str:
 
 async def user_message(conversation_id: str, message: str) -> tuple[str, str | None]:
     if conversation_id not in active_conversations:
-        raise Exception("This conversation doesn't exist.")
+        raise HTTPException(404, "This conversation doesn't exist.")
 
     chat, lock = active_conversations[conversation_id]
 
     if lock.locked():
-        raise Exception("Please wait for the previous answer.")
+        raise HTTPException(429, "Please wait for the previous answer.")
 
     async with lock:
         answer = await asyncio.to_thread(chat.submit_message, message)
