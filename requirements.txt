@@ -2,4 +2,6 @@ langchain~=0.0
 openai~=0.27
 pinecone-client~=2.2
 python-dotenv~=1.0
+fastapi~=0.97
+uvicorn~=0.22
 slack-bolt~=1.18
