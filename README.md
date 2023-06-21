@@ -19,20 +19,14 @@ Install dependencies
 pip install -U -r requirements.txt
 ```
 
-Run the API
+Run the project
 
 ```
 python -m medrzec-ai
 ```
 
-Run the Slack bot
-
-```
-python -m slack-bot
-```
-
 You may want to update the Pinecone database
 
 ```
-python update_pinecone.py "./Remote-First Work Playbook.md"
+python update_pinecone.py "./Remote Work Playbook.md"
 ```
