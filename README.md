@@ -10,8 +10,8 @@ python -m venv venv
 
 Configure required environment variables
 
--   copy `.env.example` to `.env`
--   fill in environment variables
+- copy `.env.example` to `.env`
+- fill in environment variables
 
 Install dependencies
 
@@ -28,5 +28,5 @@ python -m medrzec-ai
 You may want to update the Pinecone database
 
 ```
-python update_pinecone.py "./Remote-First Work Playbook.md"
+python update_pinecone.py "./Remote Work Playbook.md"
 ```
