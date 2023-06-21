@@ -22,7 +22,7 @@ pip install -U -r requirements.txt
 Run the project
 
 ```
-python -m medrzec-ai
+uvicorn medrzec-ai.__main__:app
 ```
 
 You may want to update the Pinecone database

@@ -4,7 +4,6 @@ from asyncio import Lock
 from uuid import uuid4
 
 import dotenv
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,6 +13,8 @@ from .question_chat import QuestionChat
 
 PLAYBOOK_URL = "https://remotehow.notion.site/Remote-Work-Playbook-Template-b537fb9b503f4a0a9296774d464777d6"
 PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on #remotework, and improve your score.>\nLet’s dive in 🚀"
+
+dotenv.load_dotenv()
 
 active_conversations: dict[str, tuple[QuestionChat | PlaybookChat, Lock]] = {}
 
@@ -107,8 +108,3 @@ You are familiar with remote work but need more guidance to feel fully comfortab
 You need more assistance with remote work to feel fully comfortable in it. Let us help you! 🏗️
 {PLAYBOOK_UPSELL}"""
     return message
-
-
-if __name__ == "__main__":
-    dotenv.load_dotenv()
-    uvicorn.run(app)
