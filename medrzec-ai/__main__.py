@@ -8,7 +8,6 @@ import dotenv
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from google_auth_oauthlib.flow import Flow
 from pydantic import BaseModel
 
 from .playbook_chat import PlaybookChat
