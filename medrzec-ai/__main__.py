@@ -98,6 +98,9 @@ async def start_conversation(request: StartChatRequest):
 
     json = response.json()
 
+    if response.status_code != 200:
+        raise HTTPException(400, f"OAuth2 error: {json['error']}")
+
     response = await client.get(
         "https://www.googleapis.com/userinfo/v2/me",
         headers={"Authorization": f"{json['token_type']} {json['access_token']}"},
