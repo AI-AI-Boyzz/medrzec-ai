@@ -101,6 +101,9 @@ async def start_conversation(request: StartChatRequest):
     if response.status_code != 200:
         raise HTTPException(400, f"OAuth2 error: {json['error']}")
 
+    if json["scope"] != "https://www.googleapis.com/auth/userinfo.email openid":
+        raise HTTPException(400, "Invalid OAuth2 scope.")
+
     response = await client.get(
         "https://www.googleapis.com/userinfo/v2/me",
         headers={"Authorization": f"{json['token_type']} {json['access_token']}"},
