@@ -1,11 +1,14 @@
 import asyncio
+import os
 import re
 from asyncio import Lock
 from uuid import uuid4
 
 import dotenv
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from google_auth_oauthlib.flow import Flow
 from pydantic import BaseModel
 
 from .playbook_chat import PlaybookChat
@@ -20,11 +23,17 @@ active_conversations: dict[str, tuple[QuestionChat | PlaybookChat, Lock]] = {}
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
+client = httpx.AsyncClient()
+
+
+class StartChatRequest(BaseModel):
+    code: str
 
 
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
+    picture: str
 
 
 class SendMessageRequest(BaseModel):
@@ -74,10 +83,36 @@ async def user_message(conversation_id: str, message: str) -> tuple[str, str | N
 
 
 @app.post("/start-chat", response_model=StartChatResponse)
-async def start_conversation():
+async def start_conversation(request: StartChatRequest):
     chat_id = uuid4().hex
+
+    response = await client.post(
+        "https://oauth2.googleapis.com/token",
+        params={
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "code": request.code,
+            "grant_type": "authorization_code",
+            "redirect_uri": os.getenv("OAUTH2_REDIRECT_URI"),
+        },
+    )
+
+    json = response.json()
+
+    response = await client.get(
+        "https://www.googleapis.com/userinfo/v2/me",
+        headers={"Authorization": f"{json['token_type']} {json['access_token']}"},
+    )
+
+    user_info = response.json()
+
+    if not user_info["verified_email"]:
+        raise HTTPException(403, "Email not verified.")
+
     answer = await start_chat(chat_id)
-    return StartChatResponse(chat_id=chat_id, message=answer)
+    return StartChatResponse(
+        chat_id=chat_id, message=answer, picture=user_info["picture"]
+    )
 
 
 @app.post("/send-message", response_model=SendMessageResponse)
