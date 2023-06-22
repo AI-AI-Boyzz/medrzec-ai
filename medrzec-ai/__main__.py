@@ -33,7 +33,7 @@ class StartChatRequest(BaseModel):
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
-    picture: str
+    user_picture: str
 
 
 class SendMessageRequest(BaseModel):
@@ -111,7 +111,7 @@ async def start_conversation(request: StartChatRequest):
 
     answer = await start_chat(chat_id)
     return StartChatResponse(
-        chat_id=chat_id, message=answer, picture=user_info["picture"]
+        chat_id=chat_id, message=answer, user_picture=user_info["picture"]
     )
 
 
