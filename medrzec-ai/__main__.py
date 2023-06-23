@@ -26,12 +26,13 @@ client = httpx.AsyncClient()
 
 
 class StartChatRequest(BaseModel):
-    code: str
+    id_token: str
 
 
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
+    user_name: str
     user_picture: str
 
 
@@ -83,40 +84,28 @@ async def user_message(conversation_id: str, message: str) -> tuple[str, str | N
 
 @app.post("/start-chat", response_model=StartChatResponse)
 async def start_conversation(request: StartChatRequest):
-    chat_id = uuid4().hex
-
-    response = await client.post(
-        "https://oauth2.googleapis.com/token",
-        params={
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-            "code": request.code,
-            "grant_type": "authorization_code",
-            "redirect_uri": os.getenv("OAUTH2_REDIRECT_URI"),
-        },
+    response = await client.get(
+        "https://oauth2.googleapis.com/tokeninfo", params={"id_token": request.id_token}
     )
 
-    json = response.json()
+    token_info = response.json()
 
     if response.status_code != 200:
-        raise HTTPException(400, f"OAuth2 error: {json['error']}")
+        raise HTTPException(400, f"OAuth2 error: {token_info['error']}")
 
-    if json["scope"] != "https://www.googleapis.com/auth/userinfo.email openid":
-        raise HTTPException(400, "Invalid OAuth2 scope.")
+    if token_info["aud"] != os.getenv("GOOGLE_CLIENT_ID"):
+        raise HTTPException(400, "Invalid OAuth2 token.")
 
-    response = await client.get(
-        "https://www.googleapis.com/userinfo/v2/me",
-        headers={"Authorization": f"{json['token_type']} {json['access_token']}"},
-    )
-
-    user_info = response.json()
-
-    if not user_info["verified_email"]:
+    if not token_info["email_verified"]:
         raise HTTPException(403, "Email not verified.")
 
+    chat_id = uuid4().hex
     answer = await start_chat(chat_id)
     return StartChatResponse(
-        chat_id=chat_id, message=answer, user_picture=user_info["picture"]
+        chat_id=chat_id,
+        message=answer,
+        user_name=token_info["given_name"],
+        user_picture=token_info["picture"],
     )
 
 
