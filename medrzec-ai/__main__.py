@@ -30,14 +30,15 @@ client = httpx.AsyncClient()
 
 
 class StartChatRequest(BaseModel):
-    id_token: str
+    id_token: str | None
+    api_key: str | None
 
 
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
-    user_name: str
-    user_picture: str
+    user_name: str | None
+    user_picture: str | None
 
 
 class SendMessageRequest(BaseModel):
@@ -101,19 +102,35 @@ async def user_message(conversation_id: str, message: str) -> tuple[str, str | N
 
 @app.post("/start-chat", response_model=StartChatResponse)
 async def start_conversation(request: StartChatRequest):
-    token_info = await fetch_token(request.id_token)
-    user = database.get_user(token_info["email"])
+    if request.id_token is not None:
+        token_info = await fetch_token(request.id_token)
+        user = database.get_user(token_info["email"])
 
-    if user is None:
-        raise HTTPException(403, "Email not registered.")
+        if user is None:
+            raise HTTPException(401, "Email not registered.")
+
+        user_name = token_info["given_name"]
+        user_picture = token_info["picture"]
+
+    elif request.api_key is not None:
+        api_key = database.get_api_key(request.api_key)
+
+        if api_key is None:
+            raise HTTPException(401, "API key not found.")
+
+        user_name = None
+        user_picture = None
+
+    else:
+        raise HTTPException(401, "Missing credentials.")
 
     chat_id = uuid4().hex
     answer = await start_chat(chat_id)
     return StartChatResponse(
         chat_id=chat_id,
         message=answer,
-        user_name=token_info["given_name"],
-        user_picture=token_info["picture"],
+        user_name=user_name,
+        user_picture=user_picture,
     )
 
 
