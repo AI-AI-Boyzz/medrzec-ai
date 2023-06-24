@@ -12,7 +12,7 @@ INDEX_NAME = "playbook"
 
 dotenv.load_dotenv()
 
-pinecone.init(os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
+pinecone.init(os.environ["PINECONE_API_KEY"], environment=os.environ["PINECONE_ENV"])
 
 
 print("Clearing DB index…")

@@ -10,13 +10,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+dotenv.load_dotenv()
+
+from . import database
 from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
 
 PLAYBOOK_URL = "https://remotehow.notion.site/Remote-Work-Playbook-Template-b537fb9b503f4a0a9296774d464777d6"
 PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on #remotework, and improve your score.>\nLet’s dive in 🚀"
-
-dotenv.load_dotenv()
 
 active_conversations: dict[str, tuple[QuestionChat | PlaybookChat, Lock]] = {}
 
@@ -93,11 +94,16 @@ async def start_conversation(request: StartChatRequest):
     if response.status_code != 200:
         raise HTTPException(400, f"OAuth2 error: {token_info['error']}")
 
-    if token_info["aud"] != os.getenv("GOOGLE_CLIENT_ID"):
+    if token_info["aud"] != os.environ["GOOGLE_CLIENT_ID"]:
         raise HTTPException(400, "Invalid OAuth2 token.")
 
     if not token_info["email_verified"]:
         raise HTTPException(403, "Email not verified.")
+
+    user = database.get_user(token_info["email"])
+
+    if user is None:
+        raise HTTPException(403, "Email not registered.")
 
     chat_id = uuid4().hex
     answer = await start_chat(chat_id)
