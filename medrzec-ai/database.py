@@ -2,11 +2,11 @@ import enum
 import os
 
 import sqlalchemy
-from sqlalchemy import Enum, Result, delete, select
+from sqlalchemy import Enum, Result, String, delete, select, update
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
-class Role(enum.Enum):
+class Role(enum.IntEnum):
     user = 1
     admin = 2
 
@@ -19,13 +19,13 @@ class User(Base):
     __tablename__ = "email"
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True)
-    role: Mapped[Enum] = mapped_column(Enum(Role))
+    role: Mapped[Enum] = mapped_column(Enum(Role), default=Role.user)
 
 
 class APIKey(Base):
     __tablename__ = "api_key"
     id: Mapped[int] = mapped_column(primary_key=True)
-    key: Mapped[str]
+    key: Mapped[str] = mapped_column(String(64))
 
 
 engine = sqlalchemy.create_engine(os.environ["DATABASE_PATH"])
@@ -41,6 +41,13 @@ def add_user(user: User):
 def get_user(email: str) -> User | None:
     with Session(engine) as session:
         return session.scalars(select(User).where(User.email == email)).first()
+
+
+def update_user_role(email: str, role: Role) -> Result:
+    with Session(engine) as session:
+        return session.execute(
+            update(User).values(role=role).where(User.email == email)
+        )
 
 
 def delete_user(email: str) -> Result:

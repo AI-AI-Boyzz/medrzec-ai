@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import os
 import re
+import secrets
 from asyncio import Lock
 from uuid import uuid4
 
@@ -13,6 +15,7 @@ from pydantic import BaseModel
 dotenv.load_dotenv()
 
 from . import database
+from .database import APIKey, Role, User
 from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
 
@@ -44,6 +47,19 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     messages: list[str]
+
+
+class NewUserRequest(BaseModel):
+    id_token: str
+    email: str
+
+
+class NewAPIKeyRequest(BaseModel):
+    id_token: str
+
+
+class NewAPIKeyResponse(BaseModel):
+    api_key: str
 
 
 async def start_chat(conversation_id: str) -> str:
@@ -85,21 +101,7 @@ async def user_message(conversation_id: str, message: str) -> tuple[str, str | N
 
 @app.post("/start-chat", response_model=StartChatResponse)
 async def start_conversation(request: StartChatRequest):
-    response = await client.get(
-        "https://oauth2.googleapis.com/tokeninfo", params={"id_token": request.id_token}
-    )
-
-    token_info = response.json()
-
-    if response.status_code != 200:
-        raise HTTPException(400, f"OAuth2 error: {token_info['error']}")
-
-    if token_info["aud"] != os.environ["GOOGLE_CLIENT_ID"]:
-        raise HTTPException(400, "Invalid OAuth2 token.")
-
-    if not token_info["email_verified"]:
-        raise HTTPException(403, "Email not verified.")
-
+    token_info = await fetch_token(request.id_token)
     user = database.get_user(token_info["email"])
 
     if user is None:
@@ -124,6 +126,75 @@ async def send_message(request: SendMessageRequest):
         messages.append(score_message)
 
     return SendMessageResponse(messages=messages)
+
+
+@app.post("/new-user")
+async def new_user(request: NewUserRequest):
+    token_info = await fetch_token(request.id_token)
+    user = database.get_user(token_info["email"])
+
+    if user is None or user.role != Role.admin:
+        raise HTTPException(403, "Missing permissions.")
+
+    database.add_user(User(email=request.email))
+
+
+@app.post("/new-api-key", response_model=NewAPIKeyResponse)
+async def new_api_key(request: NewAPIKeyRequest):
+    token_info = await fetch_token(request.id_token)
+    user = database.get_user(token_info["email"])
+
+    if user is None or user.role != Role.admin:
+        raise HTTPException(403, "Missing permissions.")
+
+    api_key = generate_api_key()
+    database.add_api_key(APIKey(key=api_key))
+    return NewAPIKeyResponse(api_key=api_key)
+
+
+@app.post("/promote-user")
+async def promote_user(request: NewUserRequest):
+    token_info = await fetch_token(request.id_token)
+    user = database.get_user(token_info["email"])
+
+    if user is None or user.role != Role.admin:
+        raise HTTPException(403, "Missing permissions.")
+
+    database.update_user_role(request.email, Role.admin)
+
+
+@app.post("/demote-user")
+async def demote_user(request: NewUserRequest):
+    token_info = await fetch_token(request.id_token)
+    user = database.get_user(token_info["email"])
+
+    if user is None or user.role != Role.admin:
+        raise HTTPException(403, "Missing permissions.")
+
+    database.update_user_role(request.email, Role.user)
+
+
+async def fetch_token(id_token: str) -> dict:
+    response = await client.get(
+        "https://oauth2.googleapis.com/tokeninfo", params={"id_token": id_token}
+    )
+
+    token_info = response.json()
+
+    if response.status_code != 200:
+        raise HTTPException(400, f"OAuth2 error: {token_info['error']}")
+
+    if token_info["aud"] != os.environ["GOOGLE_CLIENT_ID"]:
+        raise HTTPException(400, "Invalid OAuth2 token.")
+
+    if not token_info["email_verified"]:
+        raise HTTPException(403, "Email not verified.")
+
+    return token_info
+
+
+def generate_api_key() -> str:
+    return base64.urlsafe_b64encode(secrets.token_bytes(48)).decode()
 
 
 def score_to_message(score: int) -> str:
