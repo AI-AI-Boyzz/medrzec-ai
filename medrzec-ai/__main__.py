@@ -131,7 +131,7 @@ async def send_message(request: SendMessageRequest):
     messages = [answer]
 
     if score_message is not None:
-        messages.append(score_message)
+        messages.insert(0, score_message)
 
     return SendMessageResponse(messages=messages)
 
