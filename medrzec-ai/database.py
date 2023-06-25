@@ -1,14 +1,8 @@
-import enum
 import os
 
 import sqlalchemy
-from sqlalchemy import Enum, Result, String, delete, select, update
+from sqlalchemy import Result, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
-
-
-class Role(enum.IntEnum):
-    user = 1
-    admin = 2
 
 
 class Base(DeclarativeBase):
@@ -19,13 +13,6 @@ class User(Base):
     __tablename__ = "email"
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True)
-    role: Mapped[Enum] = mapped_column(Enum(Role), default=Role.user)
-
-
-class APIKey(Base):
-    __tablename__ = "api_key"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    key: Mapped[str] = mapped_column(String(64))
 
 
 engine = sqlalchemy.create_engine(os.environ["DATABASE_PATH"])
@@ -43,29 +30,6 @@ def get_user(email: str) -> User | None:
         return session.scalars(select(User).where(User.email == email)).first()
 
 
-def update_user_role(email: str, role: Role) -> Result:
-    with Session(engine) as session:
-        return session.execute(
-            update(User).values(role=role).where(User.email == email)
-        )
-
-
 def delete_user(email: str) -> Result:
     with Session(engine) as session:
         return session.execute(delete(User).where(User.email == email))
-
-
-def add_api_key(api_key: APIKey):
-    with Session(engine) as session:
-        session.add(api_key)
-        session.commit()
-
-
-def get_api_key(key: str) -> APIKey | None:
-    with Session(engine) as session:
-        return session.scalars(select(APIKey).where(APIKey.key == key)).first()
-
-
-def delete_api_key(key: str) -> Result:
-    with Session(engine) as session:
-        return session.execute(delete(APIKey).where(APIKey.key == key))

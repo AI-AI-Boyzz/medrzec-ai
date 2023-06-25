@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import hmac
 import os
 import re
 import secrets
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 dotenv.load_dotenv()
 
 from . import database
-from .database import APIKey, Role, User
+from .database import User
 from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
 
@@ -51,16 +52,8 @@ class SendMessageResponse(BaseModel):
 
 
 class NewUserRequest(BaseModel):
-    id_token: str
-    email: str
-
-
-class NewAPIKeyRequest(BaseModel):
-    id_token: str
-
-
-class NewAPIKeyResponse(BaseModel):
     api_key: str
+    email: str
 
 
 async def start_chat(conversation_id: str) -> str:
@@ -113,10 +106,8 @@ async def start_conversation(request: StartChatRequest):
         user_picture = token_info["picture"]
 
     elif request.api_key is not None:
-        api_key = database.get_api_key(request.api_key)
-
-        if api_key is None:
-            raise HTTPException(401, "API key not found.")
+        if not check_service_key(request.api_key):
+            raise HTTPException(401, "Invalid API key.")
 
         user_name = None
         user_picture = None
@@ -147,48 +138,10 @@ async def send_message(request: SendMessageRequest):
 
 @app.post("/new-user")
 async def new_user(request: NewUserRequest):
-    token_info = await fetch_token(request.id_token)
-    user = database.get_user(token_info["email"])
-
-    if user is None or user.role != Role.admin:
-        raise HTTPException(403, "Missing permissions.")
+    if not check_service_key(request.api_key):
+        raise HTTPException(401, "Invalid API key.")
 
     database.add_user(User(email=request.email))
-
-
-@app.post("/new-api-key", response_model=NewAPIKeyResponse)
-async def new_api_key(request: NewAPIKeyRequest):
-    token_info = await fetch_token(request.id_token)
-    user = database.get_user(token_info["email"])
-
-    if user is None or user.role != Role.admin:
-        raise HTTPException(403, "Missing permissions.")
-
-    api_key = generate_api_key()
-    database.add_api_key(APIKey(key=api_key))
-    return NewAPIKeyResponse(api_key=api_key)
-
-
-@app.post("/promote-user")
-async def promote_user(request: NewUserRequest):
-    token_info = await fetch_token(request.id_token)
-    user = database.get_user(token_info["email"])
-
-    if user is None or user.role != Role.admin:
-        raise HTTPException(403, "Missing permissions.")
-
-    database.update_user_role(request.email, Role.admin)
-
-
-@app.post("/demote-user")
-async def demote_user(request: NewUserRequest):
-    token_info = await fetch_token(request.id_token)
-    user = database.get_user(token_info["email"])
-
-    if user is None or user.role != Role.admin:
-        raise HTTPException(403, "Missing permissions.")
-
-    database.update_user_role(request.email, Role.user)
 
 
 async def fetch_token(id_token: str) -> dict:
@@ -208,6 +161,10 @@ async def fetch_token(id_token: str) -> dict:
         raise HTTPException(403, "Email not verified.")
 
     return token_info
+
+
+def check_service_key(key: str) -> bool:
+    return hmac.compare_digest(key, os.environ["SERVICE_KEY"])
 
 
 def generate_api_key() -> str:
