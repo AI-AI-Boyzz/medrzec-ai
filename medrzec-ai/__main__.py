@@ -144,6 +144,27 @@ async def new_user(request: NewUserRequest):
     database.add_user(User(email=request.email))
 
 
+@app.get("/slack")
+async def slack(code: str):
+    response = await client.post(
+        "https://slack.com/api/oauth.v2.access",
+        params={
+            "client_id": os.environ["SLACK_CLIENT_ID"],
+            "client_secret": os.environ["SLACK_CLIENT_SECRET"],
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": os.environ["SLACK_REDIRECT_URI"],
+        },
+    )
+
+    json = response.json()
+
+    if not json["ok"]:
+        return HTTPException(400, f"OAuth error: {json['error']}")
+
+    return f"Authorized with the {json['team']['name']} workspace."
+
+
 async def fetch_token(id_token: str) -> dict:
     response = await client.get(
         "https://oauth2.googleapis.com/tokeninfo", params={"id_token": id_token}
@@ -152,10 +173,10 @@ async def fetch_token(id_token: str) -> dict:
     token_info = response.json()
 
     if response.status_code != 200:
-        raise HTTPException(400, f"OAuth2 error: {token_info['error']}")
+        raise HTTPException(400, f"OAuth error: {token_info['error']}")
 
     if token_info["aud"] != os.environ["GOOGLE_CLIENT_ID"]:
-        raise HTTPException(400, "Invalid OAuth2 token.")
+        raise HTTPException(400, "Invalid OAuth token.")
 
     if not token_info["email_verified"]:
         raise HTTPException(403, "Email not verified.")
