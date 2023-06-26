@@ -4,9 +4,10 @@ import pinecone
 from langchain.agents import AgentType, initialize_agent
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import ConversationBufferMemory
 from langchain.tools import tool
 from langchain.vectorstores import Pinecone
+
+from .conversation_memory import CleanConversationMemory
 
 
 class PlaybookChat:
@@ -23,7 +24,7 @@ class PlaybookChat:
 
         tools = [query_playbook]
 
-        memory = ConversationBufferMemory(
+        memory = CleanConversationMemory(
             memory_key="chat_history", return_messages=True
         )
 
@@ -32,7 +33,6 @@ class PlaybookChat:
             ChatOpenAI(temperature=0.9, model="gpt-4"),
             AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
             memory=memory,
-            verbose=True,
         )
 
     def start_conversation(self, user_score: int) -> str:
