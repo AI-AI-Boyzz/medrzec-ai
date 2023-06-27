@@ -4,10 +4,9 @@ import pinecone
 from langchain.agents import AgentType, initialize_agent
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.memory import ConversationBufferMemory
 from langchain.tools import tool
 from langchain.vectorstores import Pinecone
-
-from .conversation_memory import CleanConversationMemory
 
 
 class PlaybookChat:
@@ -24,7 +23,7 @@ class PlaybookChat:
 
         tools = [query_playbook]
 
-        memory = CleanConversationMemory(
+        memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
 

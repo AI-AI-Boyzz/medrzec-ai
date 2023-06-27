@@ -1,8 +1,8 @@
-from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
 from langchain.schema import HumanMessage
 
-from .conversation_memory import CleanConversationMemory
+from .conversation_chain import CleanConversationChain
 
 PREDEFINED_MESSAGES = [
     HumanMessage(
@@ -36,9 +36,9 @@ FINAL_HUMAN_MESSAGE = "Start by asking the first question now."
 class QuestionChat:
     def __init__(self) -> None:
         llm = ChatOpenAI(temperature=1, model="gpt-4")
-        memory = CleanConversationMemory()
+        memory = ConversationBufferMemory()
         memory.chat_memory.messages.extend(PREDEFINED_MESSAGES)
-        self.chain = ConversationChain(llm=llm, memory=memory)
+        self.chain = CleanConversationChain(llm=llm, memory=memory)
 
     def start_conversation(self) -> str:
         return self.chain(FINAL_HUMAN_MESSAGE)["response"]
