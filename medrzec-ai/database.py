@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import sqlalchemy
@@ -15,21 +17,20 @@ class User(Base):
     email: Mapped[str] = mapped_column(unique=True)
 
 
-engine = sqlalchemy.create_engine(os.environ["DATABASE_PATH"])
-Base.metadata.create_all(engine)
+class Database:
+    def __init__(self) -> None:
+        self.engine = sqlalchemy.create_engine(os.environ["DATABASE_PATH"])
+        Base.metadata.create_all(self.engine)
 
+    def add_user(self, user: User):
+        with Session(self.engine) as session:
+            session.add(user)
+            session.commit()
 
-def add_user(user: User):
-    with Session(engine) as session:
-        session.add(user)
-        session.commit()
+    def get_user(self, email: str) -> User | None:
+        with Session(self.engine) as session:
+            return session.scalars(select(User).where(User.email == email)).first()
 
-
-def get_user(email: str) -> User | None:
-    with Session(engine) as session:
-        return session.scalars(select(User).where(User.email == email)).first()
-
-
-def delete_user(email: str) -> Result:
-    with Session(engine) as session:
-        return session.execute(delete(User).where(User.email == email))
+    def delete_user(self, email: str) -> Result:
+        with Session(self.engine) as session:
+            return session.execute(delete(User).where(User.email == email))

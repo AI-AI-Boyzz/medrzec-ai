@@ -26,6 +26,10 @@ documents = TextLoader(
 
 
 print("Uploading chunks…")
-Pinecone.from_documents(documents, OpenAIEmbeddings(), index_name=INDEX_NAME)
+Pinecone.from_documents(
+    documents,
+    OpenAIEmbeddings(),  # pyright: ignore [reportGeneralTypeIssues]
+    index_name=INDEX_NAME,
+)
 
 print("Success!")
