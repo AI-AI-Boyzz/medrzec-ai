@@ -4,6 +4,7 @@ import hmac
 import os
 import secrets
 from asyncio import Lock
+from enum import StrEnum, auto
 from uuid import uuid4
 
 import dotenv
@@ -26,9 +27,14 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
 client = httpx.AsyncClient()
 
 
+class FlowEnum(StrEnum):
+    QUESTIONS_AND_PLAYBOOK = auto()
+
+
 class StartChatRequest(BaseModel):
     id_token: str | None
     api_key: str | None
+    flow: FlowEnum
 
 
 class StartChatResponse(BaseModel):
@@ -52,14 +58,19 @@ class NewUserRequest(BaseModel):
     email: str
 
 
-async def start_chat(conversation_id: str) -> str:
+async def start_chat(flow: FlowEnum) -> tuple[str, str]:
+    if flow is FlowEnum.QUESTIONS_AND_PLAYBOOK:
+        chat = QuestionAndPlaybookChat()
+    else:
+        raise HTTPException(400, "Invalid flow.")
+
+    chat_id = uuid4().hex
     lock = asyncio.Lock()
     async with lock:
-        chat = QuestionAndPlaybookChat()
-        active_conversations[conversation_id] = (chat, lock)
+        active_conversations[chat_id] = (chat, lock)
         answer = await asyncio.to_thread(chat.start_conversation)
 
-    return answer
+    return (chat_id, answer)
 
 
 async def user_message(conversation_id: str, message: str) -> list[str]:
@@ -97,8 +108,7 @@ async def start_conversation(request: StartChatRequest):
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    chat_id = uuid4().hex
-    answer = await start_chat(chat_id)
+    (chat_id, answer) = await start_chat(request.flow)
     return StartChatResponse(
         chat_id=chat_id,
         message=answer,
