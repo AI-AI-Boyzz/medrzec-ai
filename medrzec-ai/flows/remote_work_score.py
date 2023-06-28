@@ -60,6 +60,9 @@ LEADER_QUESTIONS = [
     Question("Do you know **how your employees feel** even when you work remotely?"),
 ]
 
+MIN_SCORE = sum(min(question.points) for question in LEADER_QUESTIONS)
+MAX_SCORE = sum(max(question.points) for question in LEADER_QUESTIONS)
+
 
 class RemoteWorkScoreChat(Flow):
     def __init__(self) -> None:
@@ -133,7 +136,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
         if question_index + 1 >= len(LEADER_QUESTIONS):
             self.flow_end = True
             points = calculate_points(LEADER_QUESTIONS, self.answers)
-            score = calculate_score(points, -20, 21)
+            score = calculate_score(points, MIN_SCORE, MAX_SCORE)
             messages.append(
                 f"You've got {points} points which results in "
                 f"a {score}% Leader Remote Work Score."
