@@ -13,6 +13,8 @@ from .flow import Flow
 
 class PlaybookChat(Flow):
     def __init__(self, user_score: int) -> None:
+        super().__init__()
+
         self.user_score = user_score
 
         pinecone.init(

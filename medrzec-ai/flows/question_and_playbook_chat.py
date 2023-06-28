@@ -10,6 +10,8 @@ PLAYBOOK_UPSELL = f"<{PLAYBOOK_URL}|Get access to the world’s best playbook on
 
 class QuestionAndPlaybookChat(Flow):
     def __init__(self) -> None:
+        super().__init__()
+
         self.flow: Flow = QuestionChat()
 
     def start_conversation(self) -> str:

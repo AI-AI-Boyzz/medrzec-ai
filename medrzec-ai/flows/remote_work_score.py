@@ -63,7 +63,9 @@ LEADER_QUESTIONS = [
 
 class RemoteWorkScoreChat(Flow):
     def __init__(self) -> None:
-        self.answers: list[int] = [1, 2, 2, 2, 4, 2, 2, 1, 4, 2]
+        super().__init__()
+
+        self.answers: list[int] = []
         self.retry = False
 
         llm = ChatOpenAI(temperature=1, model="gpt-4", client=None)
@@ -129,6 +131,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
         messages = [response]
 
         if question_index + 1 >= len(LEADER_QUESTIONS):
+            self.flow_end = True
             points = calculate_points(LEADER_QUESTIONS, self.answers)
             score = calculate_score(points, -20, 21)
             messages.append(

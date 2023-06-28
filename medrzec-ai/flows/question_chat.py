@@ -36,6 +36,8 @@ FINAL_HUMAN_MESSAGE = "Start by asking the first question now."
 
 class QuestionChat(Flow):
     def __init__(self) -> None:
+        super().__init__()
+
         llm = ChatOpenAI(
             temperature=1, model="gpt-4"
         )  # pyright: ignore [reportGeneralTypeIssues]

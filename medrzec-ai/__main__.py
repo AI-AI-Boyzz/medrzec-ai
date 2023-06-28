@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .database import Database, User
+from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
 from .flows.remote_work_score import RemoteWorkScoreChat
@@ -31,6 +32,7 @@ client = httpx.AsyncClient()
 class FlowEnum(StrEnum):
     QUESTIONS_AND_PLAYBOOK = auto()
     REMOTE_WORK_SCORE = auto()
+    AWESOME = auto()
 
 
 class StartChatRequest(BaseModel):
@@ -42,6 +44,7 @@ class StartChatRequest(BaseModel):
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
+    flow_end: bool
     user_name: str | None
     user_picture: str | None
 
@@ -53,6 +56,7 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     messages: list[str]
+    flow_end: bool
 
 
 class NewUserRequest(BaseModel):
@@ -60,25 +64,26 @@ class NewUserRequest(BaseModel):
     email: str
 
 
-async def start_chat(flow: FlowEnum) -> tuple[str, str]:
+async def start_chat(flow: FlowEnum) -> tuple[str, str, bool]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
             chat = QuestionAndPlaybookChat()
         case FlowEnum.REMOTE_WORK_SCORE:
             chat = RemoteWorkScoreChat()
-        case _:
-            raise HTTPException(400, "Invalid flow.")
+        case FlowEnum.AWESOME:
+            chat = AwesomeChat()
 
     chat_id = uuid4().hex
-    lock = asyncio.Lock()
-    async with lock:
-        active_conversations[chat_id] = (chat, lock)
-        answer = await asyncio.to_thread(chat.start_conversation)
+    answer = await asyncio.to_thread(chat.start_conversation)
+    flow_end = chat.flow_end
 
-    return (chat_id, answer)
+    if not flow_end:
+        active_conversations[chat_id] = (chat, asyncio.Lock())
+
+    return (chat_id, answer, flow_end)
 
 
-async def user_message(conversation_id: str, message: str) -> list[str]:
+async def user_message(conversation_id: str, message: str) -> tuple[list[str], bool]:
     if conversation_id not in active_conversations:
         raise HTTPException(404, "This conversation doesn't exist.")
 
@@ -88,7 +93,13 @@ async def user_message(conversation_id: str, message: str) -> list[str]:
         raise HTTPException(429, "Please wait for the previous answer.")
 
     async with lock:
-        return await asyncio.to_thread(chat.submit_message, message)
+        messages = await asyncio.to_thread(chat.submit_message, message)
+        flow_end = chat.flow_end
+
+        if flow_end:
+            del active_conversations[conversation_id]
+
+    return (messages, flow_end)
 
 
 @app.post("/start-chat", response_model=StartChatResponse)
@@ -113,10 +124,11 @@ async def start_conversation(request: StartChatRequest):
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    (chat_id, answer) = await start_chat(request.flow)
+    (chat_id, answer, flow_end) = await start_chat(request.flow)
     return StartChatResponse(
         chat_id=chat_id,
         message=answer,
+        flow_end=flow_end,
         user_name=user_name,
         user_picture=user_picture,
     )
@@ -124,8 +136,8 @@ async def start_conversation(request: StartChatRequest):
 
 @app.post("/send-message", response_model=SendMessageResponse)
 async def send_message(request: SendMessageRequest):
-    messages = await user_message(request.chat_id, request.user_message)
-    return SendMessageResponse(messages=messages)
+    (messages, flow_end) = await user_message(request.chat_id, request.user_message)
+    return SendMessageResponse(messages=messages, flow_end=flow_end)
 
 
 @app.post("/new-user")
