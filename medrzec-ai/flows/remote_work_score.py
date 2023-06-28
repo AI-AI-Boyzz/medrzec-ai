@@ -154,8 +154,19 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
         )
 
     def submit_answer(self, answer: str):
+        try:
+            answer_int = int(answer)
+        except ValueError:
+            return
+
+        answers = LEADER_QUESTIONS[len(self.answers)].answers
+        answers = 5 if answers is None else len(answers)
+
+        if answer_int > answers or answer_int < 1:
+            return
+
         self.retry = False
-        self.answers.append(int(answer))
+        self.answers.append(answer_int - 1)
 
 
 def format_answers(answers: list[str] | None) -> str:
@@ -167,7 +178,7 @@ def format_answers(answers: list[str] | None) -> str:
 
 def calculate_points(questions: list[Question], answers: list[int]) -> int:
     return sum(
-        question.points[answer - 1]
+        question.points[answer]
         for question, answer in zip(questions, answers, strict=True)
     )
 
