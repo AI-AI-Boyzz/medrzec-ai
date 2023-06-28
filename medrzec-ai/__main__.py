@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from .database import Database, User
 from .flows.flow import Flow
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
+from .flows.remote_work_score import RemoteWorkScoreChat
 
 dotenv.load_dotenv()
 
@@ -29,6 +30,7 @@ client = httpx.AsyncClient()
 
 class FlowEnum(StrEnum):
     QUESTIONS_AND_PLAYBOOK = auto()
+    REMOTE_WORK_SCORE = auto()
 
 
 class StartChatRequest(BaseModel):
@@ -59,10 +61,13 @@ class NewUserRequest(BaseModel):
 
 
 async def start_chat(flow: FlowEnum) -> tuple[str, str]:
-    if flow is FlowEnum.QUESTIONS_AND_PLAYBOOK:
-        chat = QuestionAndPlaybookChat()
-    else:
-        raise HTTPException(400, "Invalid flow.")
+    match flow:
+        case FlowEnum.QUESTIONS_AND_PLAYBOOK:
+            chat = QuestionAndPlaybookChat()
+        case FlowEnum.REMOTE_WORK_SCORE:
+            chat = RemoteWorkScoreChat()
+        case _:
+            raise HTTPException(400, "Invalid flow.")
 
     chat_id = uuid4().hex
     lock = asyncio.Lock()
