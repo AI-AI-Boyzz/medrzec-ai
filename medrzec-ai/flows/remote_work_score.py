@@ -155,7 +155,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
 
     def submit_answer(self, answer: str):
         try:
-            answer_int = int(answer)
+            answer_int = math.ceil(float(answer))
         except ValueError:
             return
 
