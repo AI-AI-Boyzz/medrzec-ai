@@ -74,7 +74,7 @@ async def start_chat(flow: FlowEnum) -> tuple[str, str, bool]:
             chat = AwesomeChat()
 
     chat_id = uuid4().hex
-    answer = await asyncio.to_thread(chat.start_conversation)
+    answer = await chat.start_conversation()
     flow_end = chat.flow_end
 
     if not flow_end:
@@ -93,7 +93,7 @@ async def user_message(conversation_id: str, message: str) -> tuple[list[str], b
         raise HTTPException(429, "Please wait for the previous answer.")
 
     async with lock:
-        messages = await asyncio.to_thread(chat.submit_message, message)
+        messages = await chat.submit_message(message)
         flow_end = chat.flow_end
 
         if flow_end:

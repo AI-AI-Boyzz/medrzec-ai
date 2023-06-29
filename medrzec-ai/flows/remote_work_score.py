@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import math
 
@@ -107,15 +108,16 @@ Ask the question and provide the possible answers. Use Markdown formatting. Add 
             agent=AgentType.OPENAI_FUNCTIONS,
         )
 
-    def start_conversation(self) -> str:
-        return self.next_question()
+    async def start_conversation(self) -> str:
+        return await self.next_question()
 
-    def submit_message(self, text: str) -> list[str]:
+    async def submit_message(self, text: str) -> list[str]:
         question_index = len(self.answers)
         question = LEADER_QUESTIONS[question_index]
         available_answers = format_answers(question.answers)
 
-        response = self.response_parser.run(
+        response = await asyncio.to_thread(
+            self.response_parser.run,
             f"""\
 You're a conversational AI agent designed to parse user's responses to a questionnaire regarding their remote work experience.
 
@@ -128,7 +130,7 @@ The user's response was: "{text}".
 
 If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
 
-Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
+Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
         )
 
         messages = [response]
@@ -142,17 +144,17 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis."""
                 f"a {score}% Leader Remote Work Score."
             )
         elif not self.retry:
-            messages.append(self.next_question())
+            messages.append(await self.next_question())
 
         return messages
 
-    def next_question(self) -> str:
+    async def next_question(self) -> str:
         self.retry = True
         question_index = len(self.answers)
         question = LEADER_QUESTIONS[question_index]
         available_answers = format_answers(question.answers)
 
-        return self.question_asker.run(
+        return await self.question_asker.arun(
             question_number=question_index + 1,
             question_amount=len(LEADER_QUESTIONS),
             question=question.question,

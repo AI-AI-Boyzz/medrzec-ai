@@ -14,11 +14,11 @@ class QuestionAndPlaybookChat(Flow):
 
         self.flow: Flow = QuestionChat()
 
-    def start_conversation(self) -> str:
-        return self.flow.start_conversation()
+    async def start_conversation(self) -> str:
+        return await self.flow.start_conversation()
 
-    def submit_message(self, text: str) -> list[str]:
-        answer = self.flow.submit_message(text)[0]
+    async def submit_message(self, text: str) -> list[str]:
+        answer = (await self.flow.submit_message(text))[0]
 
         if match := re.search(r"Score: (\d+)", answer, re.IGNORECASE):
             user_score = int(match[1])
@@ -26,7 +26,7 @@ class QuestionAndPlaybookChat(Flow):
             score_message = score_to_message(user_score)
 
             self.flow = PlaybookChat(user_score)
-            answer = self.flow.start_conversation()
+            answer = await self.flow.start_conversation()
 
         else:
             score_message = None

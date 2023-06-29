@@ -9,12 +9,12 @@ class AwesomeChat(Flow):
 
         self.llm = ChatOpenAI(temperature=1, model="gpt-4", client=None)
 
-    def start_conversation(self) -> str:
+    async def start_conversation(self) -> str:
         self.flow_end = True
-        return self.llm.predict(
+        return await self.llm.apredict(
             "Tell the user how awesome they are and how much you like them."
             " Use Markdown formatting. Add emojis."
         )
 
-    def submit_message(self, _: str) -> list[str]:
+    async def submit_message(self, _: str) -> list[str]:
         raise NotImplementedError()

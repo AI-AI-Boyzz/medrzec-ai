@@ -6,9 +6,9 @@ class Flow(ABC):
         self.flow_end = False
 
     @abstractmethod
-    def start_conversation(self) -> str:
+    async def start_conversation(self) -> str:
         ...
 
     @abstractmethod
-    def submit_message(self, text: str) -> list[str]:
+    async def submit_message(self, text: str) -> list[str]:
         ...

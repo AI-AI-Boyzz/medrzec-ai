@@ -45,8 +45,8 @@ class QuestionChat(Flow):
         memory.chat_memory.messages.extend(PREDEFINED_MESSAGES)
         self.chain = CleanConversationChain(llm=llm, memory=memory)
 
-    def start_conversation(self) -> str:
-        return self.chain(FINAL_HUMAN_MESSAGE)["response"]
+    async def start_conversation(self) -> str:
+        return (await self.chain.acall(FINAL_HUMAN_MESSAGE))["response"]
 
-    def submit_message(self, text: str) -> list[str]:
-        return [self.chain(text)["response"]]
+    async def submit_message(self, text: str) -> list[str]:
+        return [(await self.chain.acall(text))["response"]]
