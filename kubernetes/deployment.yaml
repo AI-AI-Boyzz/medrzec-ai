@@ -21,6 +21,52 @@ spec:
       containers:
         - name: api
           image: gcr.io/remote-how-ai/github.com/ai-ai-boyzz/medrzec-ai
+          env:
+            - name: DATABASE_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: DATABASE_PATH
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: GOOGLE_CLIENT_ID
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: OPENAI_API_KEY
+            - name: PINECONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: PINECONE_API_KEY
+            - name: PINECONE_ENV
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: PINECONE_ENV
+            - name: SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: SERVICE_KEY
+            - name: SLACK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: SLACK_CLIENT_ID
+            - name: SLACK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: SLACK_CLIENT_SECRET
+            - name: SLACK_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: SLACK_REDIRECT_URI
           ports:
             - containerPort: 80
           volumeMounts:
