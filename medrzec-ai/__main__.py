@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import contextlib
 import hmac
 import os
 import secrets
@@ -9,6 +10,7 @@ from uuid import uuid4
 
 import dotenv
 import httpx
+import sqlalchemy.exc
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -145,7 +147,8 @@ async def new_user(request: NewUserRequest):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
 
-    db.add_user(User(email=request.email))
+    with contextlib.suppress(sqlalchemy.exc.IntegrityError):
+        db.add_user(User(email=request.email))
 
 
 @app.get("/slack")
