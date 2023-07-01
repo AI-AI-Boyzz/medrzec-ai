@@ -21,6 +21,10 @@ spec:
       containers:
         - name: api
           image: gcr.io/remote-how-ai/github.com/ai-ai-boyzz/medrzec-ai
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
           env:
             - name: DATABASE_PATH
               value: "sqlite:////data/db.sqlite"
