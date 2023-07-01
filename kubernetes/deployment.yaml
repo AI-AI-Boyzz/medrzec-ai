@@ -23,15 +23,12 @@ spec:
           image: gcr.io/remote-how-ai/github.com/ai-ai-boyzz/medrzec-ai
           env:
             - name: DATABASE_PATH
+              value: "sqlite:////data/db.sqlite"
+            - name: SERVICE_KEY
               valueFrom:
                 secretKeyRef:
                   name: api
-                  key: DATABASE_PATH
-            - name: GOOGLE_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: api
-                  key: GOOGLE_CLIENT_ID
+                  key: SERVICE_KEY
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -47,11 +44,11 @@ spec:
                 secretKeyRef:
                   name: api
                   key: PINECONE_ENV
-            - name: SERVICE_KEY
+            - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: api
-                  key: SERVICE_KEY
+                  key: GOOGLE_CLIENT_ID
             - name: SLACK_CLIENT_ID
               valueFrom:
                 secretKeyRef:
