@@ -18,13 +18,22 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: data
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: api
           image: gcr.io/remote-how-ai/github.com/ai-ai-boyzz/medrzec-ai
           resources:
             requests:
-              memory: "512Mi"
               cpu: "250m"
+              memory: "512Mi"
+          volumeMounts:
+            - mountPath: "/data"
+              name: data
+          ports:
+            - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
           env:
             - name: DATABASE_PATH
               value: "sqlite:////data/db.sqlite"
@@ -68,8 +77,3 @@ spec:
                 secretKeyRef:
                   name: api
                   key: SLACK_REDIRECT_URI
-          ports:
-            - containerPort: 80
-          volumeMounts:
-            - mountPath: "/data"
-              name: data
