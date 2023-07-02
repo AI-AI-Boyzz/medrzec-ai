@@ -4,6 +4,7 @@ metadata:
   name: ingress
   annotations:
     kubernetes.io/ingress.global-static-ip-name: api
+    networking.gke.io/managed-certificates: managed-cert
     kubernetes.io/ingress.class: "gce"
 spec:
   defaultBackend:
