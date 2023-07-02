@@ -116,7 +116,11 @@ async def start_conversation(request: StartChatRequest):
         user = db.get_user(token_info["email"])
 
         if user is None:
-            raise HTTPException(401, "Email not registered.")
+            raise HTTPException(
+                401,
+                "Your email is not approved yet. "
+                "Contact community@remote-first.institute to get access.",
+            )
 
         user_name = token_info["given_name"]
         user_picture = token_info["picture"]
