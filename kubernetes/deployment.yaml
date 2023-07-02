@@ -18,6 +18,8 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: data
+      nodeSelector:
+        cloud.google.com/gke-spot: "true"
       securityContext:
         runAsUser: 1000
       containers:
