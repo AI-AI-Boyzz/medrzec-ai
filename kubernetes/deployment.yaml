@@ -34,6 +34,10 @@ spec:
             - containerPort: 80
           securityContext:
             allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
           env:
             - name: DATABASE_PATH
               value: "sqlite:////data/db.sqlite"

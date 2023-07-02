@@ -11,7 +11,7 @@ from uuid import uuid4
 import dotenv
 import httpx
 import sqlalchemy.exc
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -104,6 +104,11 @@ async def user_message(conversation_id: str, message: str) -> tuple[list[str], b
     return (messages, flow_end)
 
 
+@app.get("/", response_class=Response)
+async def index():
+    return
+
+
 @app.post("/start-chat", response_model=StartChatResponse)
 async def start_conversation(request: StartChatRequest):
     if request.id_token is not None:
@@ -142,7 +147,7 @@ async def send_message(request: SendMessageRequest):
     return SendMessageResponse(messages=messages, flow_end=flow_end)
 
 
-@app.post("/new-user")
+@app.post("/new-user", response_class=Response)
 async def new_user(request: NewUserRequest):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
