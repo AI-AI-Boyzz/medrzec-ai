@@ -1,0 +1,33 @@
+steps:
+  - id: Build
+    name: gcr.io/kaniko-project/executor
+    args:
+      - --destination=$_IMAGE_NAME:$COMMIT_SHA
+      - --cache=true
+  - id: Prepare deploy
+    name: gcr.io/cloud-builders/gke-deploy
+    args:
+      - prepare
+      - --filename=kubernetes
+      - --image=$_IMAGE_NAME:$COMMIT_SHA
+      - --app=$_K8S_APP_NAME
+      - --version=$COMMIT_SHA
+      - --namespace=$_K8S_NAMESPACE
+      - --create-application-cr
+      - --output=output
+  - id: Save configs
+    name: gcr.io/cloud-builders/gsutil
+    entrypoint: sh
+    args:
+      - -c
+      - |-
+        gsutil cp -r output/suggested gs://$_OUTPUT_BUCKET_PATH/config/$_K8S_APP_NAME/$BUILD_ID/suggested
+        gsutil cp -r output/expanded gs://$_OUTPUT_BUCKET_PATH/config/$_K8S_APP_NAME/$BUILD_ID/expanded
+  - id: Apply deploy
+    name: gcr.io/cloud-builders/gke-deploy
+    args:
+      - apply
+      - --filename=output/expanded
+      - --cluster=$_GKE_CLUSTER
+      - --location=$_GKE_LOCATION
+      - --namespace=$_K8S_NAMESPACE
