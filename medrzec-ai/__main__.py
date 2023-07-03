@@ -47,8 +47,6 @@ class StartChatResponse(BaseModel):
     chat_id: str
     message: str
     flow_end: bool
-    user_name: str | None
-    user_picture: str | None
 
 
 class SendMessageRequest(BaseModel):
@@ -122,27 +120,15 @@ async def start_conversation(request: StartChatRequest):
                 "Contact community@remote-first.institute to get access.",
             )
 
-        user_name = token_info["given_name"]
-        user_picture = token_info["picture"]
-
     elif request.api_key is not None:
         if not check_service_key(request.api_key):
             raise HTTPException(401, "Invalid API key.")
-
-        user_name = None
-        user_picture = None
 
     else:
         raise HTTPException(401, "Missing credentials.")
 
     (chat_id, answer, flow_end) = await start_chat(request.flow)
-    return StartChatResponse(
-        chat_id=chat_id,
-        message=answer,
-        flow_end=flow_end,
-        user_name=user_name,
-        user_picture=user_picture,
-    )
+    return StartChatResponse(chat_id=chat_id, message=answer, flow_end=flow_end)
 
 
 @app.post("/send-message", response_model=SendMessageResponse)
