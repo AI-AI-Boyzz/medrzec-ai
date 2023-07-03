@@ -37,21 +37,10 @@ class FlowEnum(StrEnum):
     AWESOME = auto()
 
 
-class StartChatRequest(BaseModel):
-    id_token: str | None
-    api_key: str | None
-    flow: FlowEnum
-
-
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
     flow_end: bool
-
-
-class SendMessageRequest(BaseModel):
-    chat_id: str
-    user_message: str
 
 
 class SendMessageResponse(BaseModel):
@@ -59,7 +48,7 @@ class SendMessageResponse(BaseModel):
     flow_end: bool
 
 
-class NewUserRequest(BaseModel):
+class ModifyUser(BaseModel):
     api_key: str
     email: str
 
@@ -85,7 +74,7 @@ async def start_chat(flow: FlowEnum) -> tuple[str, str, bool]:
 
 async def user_message(conversation_id: str, message: str) -> tuple[list[str], bool]:
     if conversation_id not in active_conversations:
-        raise HTTPException(404, "This conversation doesn't exist.")
+        raise HTTPException(404, "This chat doesn't exist.")
 
     chat, lock = active_conversations[conversation_id]
 
@@ -107,10 +96,12 @@ async def index():
     return
 
 
-@app.post("/start-chat", response_model=StartChatResponse)
-async def start_conversation(request: StartChatRequest):
-    if request.id_token is not None:
-        token_info = await fetch_token(request.id_token)
+@app.post("/chats", response_model=StartChatResponse)
+async def start_conversation(
+    flow: FlowEnum, id_token: str | None = None, api_key: str | None = None
+):
+    if id_token is not None:
+        token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
 
         if user is None:
@@ -120,30 +111,47 @@ async def start_conversation(request: StartChatRequest):
                 "Contact community@remote-first.institute to get access.",
             )
 
-    elif request.api_key is not None:
-        if not check_service_key(request.api_key):
+    elif api_key is not None:
+        if not check_service_key(api_key):
             raise HTTPException(401, "Invalid API key.")
 
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    (chat_id, answer, flow_end) = await start_chat(request.flow)
+    (chat_id, answer, flow_end) = await start_chat(flow)
     return StartChatResponse(chat_id=chat_id, message=answer, flow_end=flow_end)
 
 
-@app.post("/send-message", response_model=SendMessageResponse)
-async def send_message(request: SendMessageRequest):
-    (messages, flow_end) = await user_message(request.chat_id, request.user_message)
+@app.delete("/chats/{chat_id}")
+async def delete_conversation(chat_id: str):
+    try:
+        del active_conversations[chat_id]
+    except KeyError as e:
+        raise HTTPException(404, "This chat doesn't exist.") from e
+
+
+@app.post("/chats/{chat_id}/messages", response_model=SendMessageResponse)
+async def send_message(chat_id: str, content: str):
+    (messages, flow_end) = await user_message(chat_id, content)
     return SendMessageResponse(messages=messages, flow_end=flow_end)
 
 
-@app.post("/new-user", response_class=Response)
-async def new_user(request: NewUserRequest):
+@app.post("/users", response_class=Response)
+async def new_user(request: ModifyUser):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
 
     with contextlib.suppress(sqlalchemy.exc.IntegrityError):
         db.add_user(User(email=request.email))
+
+
+@app.delete("/users", response_class=Response)
+async def delete_user(request: ModifyUser):
+    if not check_service_key(request.api_key):
+        raise HTTPException(401, "Invalid API key.")
+
+    with contextlib.suppress(sqlalchemy.exc.IntegrityError):
+        db.delete_user(request.email)
 
 
 @app.get("/slack")

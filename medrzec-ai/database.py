@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 
-import sqlalchemy
-from sqlalchemy import Result, delete, select
+from sqlalchemy import create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
@@ -19,7 +18,7 @@ class User(Base):
 
 class Database:
     def __init__(self) -> None:
-        self.engine = sqlalchemy.create_engine(os.environ["DATABASE_PATH"])
+        self.engine = create_engine(os.environ["DATABASE_PATH"])
         Base.metadata.create_all(self.engine)
 
     def add_user(self, user: User):
@@ -31,6 +30,6 @@ class Database:
         with Session(self.engine) as session:
             return session.scalars(select(User).where(User.email == email)).first()
 
-    def delete_user(self, email: str) -> Result:
+    def delete_user(self, email: str):
         with Session(self.engine) as session:
-            return session.execute(delete(User).where(User.email == email))
+            session.execute(delete(User).where(User.email == email))
