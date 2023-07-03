@@ -10,6 +10,10 @@ from langchain.prompts import PromptTemplate
 from .flow import Flow
 
 
+class AnswerException(Exception):
+    pass
+
+
 @dataclasses.dataclass
 class Question:
     question: str
@@ -116,9 +120,10 @@ Ask the question and provide the possible answers. Use Markdown formatting. Add 
         question = LEADER_QUESTIONS[question_index]
         available_answers = format_answers(question.answers)
 
-        response = await asyncio.to_thread(
-            self.response_parser.run,
-            f"""\
+        try:
+            response = await asyncio.to_thread(
+                self.response_parser.run,
+                f"""\
 You're a conversational AI agent designed to parse user's responses to a questionnaire regarding their remote work experience.
 
 The user was asked: "{question.question}".
@@ -131,7 +136,9 @@ The user's response was: "{text}".
 If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
 
 Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
-        )
+            )
+        except AnswerException as e:
+            return [str(e)]
 
         messages = [response]
 
@@ -164,14 +171,16 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
     def submit_answer(self, answer: str):
         try:
             answer_int = math.ceil(float(answer))
-        except ValueError:
-            return
+        except ValueError as e:
+            raise AnswerException(
+                f"{answer!r} is not a valid option. Try again."
+            ) from e
 
         answers = LEADER_QUESTIONS[len(self.answers)].answers
         answers = 5 if answers is None else len(answers)
 
         if answer_int > answers or answer_int < 1:
-            return
+            raise AnswerException(f"{answer} is not a valid option. Try again.")
 
         self.retry = False
         self.answers.append(answer_int - 1)
@@ -179,7 +188,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
 
 def format_answers(answers: list[str] | None) -> str:
     if answers is None:
-        return "An integer between 1 (not at all) and 5 (absolutely yes)"
+        return "A single digit between 1 (not at all) and 5 (absolutely yes)"
     else:
         return "\n".join(f"{i}. {answer}" for i, answer in enumerate(answers, 1))
 
