@@ -2,6 +2,7 @@ import asyncio
 import dataclasses
 import math
 
+from fastapi import HTTPException
 from langchain.agents import AgentType, Tool, initialize_agent
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
@@ -138,7 +139,7 @@ If the answer makes sense, submit the number representing it to the question to 
 Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
             )
         except AnswerException as e:
-            return [str(e)]
+            raise HTTPException(400, str(e)) from e
 
         messages = [response]
 
