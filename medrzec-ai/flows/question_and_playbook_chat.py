@@ -48,12 +48,14 @@ def score_to_message(score: int, text_format: TextFormat) -> str:
     match text_format:
         case TextFormat.MARKDOWN:
             bold = "**"
-            playbook = f"[{PLAYBOOK_URL}]({PLAYBOOK_UPSELL})"
+            paragraph = "\n\n"
+            playbook = f"[{PLAYBOOK_UPSELL}]({PLAYBOOK_URL})"
         case TextFormat.SLACK:
             bold = "*"
+            paragraph = "\n"
             playbook = f"<{PLAYBOOK_URL}|{PLAYBOOK_UPSELL}>"
 
-    playbook += "\nLet’s dive in 🚀"
+    playbook += f"{paragraph}Let’s dive in 🚀"
 
     message = f"{bold}Your Remote Work Score is {score}%!{bold} "
 
@@ -70,4 +72,4 @@ You are familiar with remote work but need more guidance to feel fully comfortab
         message += f"""😅
 You need more assistance with remote work to feel fully comfortable in it. Let us help you! 🏗️
 {playbook}"""
-    return message
+    return message.replace("\n", paragraph)
