@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from . import FlowEnum, TextFormat
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
-from .flows.flow import Flow
+from .flows.flow import Flow, FlowResponse, FlowSuggestion
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
 from .flows.remote_work_score import RemoteWorkScoreChat
 
@@ -31,15 +31,19 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
 client = httpx.AsyncClient()
 
 
+class FlowSuggestionsResponse(BaseModel):
+    flow_suggestions: list[FlowSuggestion]
+
+
 class StartChatResponse(BaseModel):
     chat_id: str
     message: str
-    flow_end: bool
+    flow_suggestions: list[FlowSuggestion] | None
 
 
 class SendMessageResponse(BaseModel):
     messages: list[str]
-    flow_end: bool
+    flow_suggestions: list[FlowSuggestion] | None
 
 
 class ModifyUser(BaseModel):
@@ -47,7 +51,9 @@ class ModifyUser(BaseModel):
     email: str
 
 
-async def start_chat(flow: FlowEnum, text_format: TextFormat) -> tuple[str, str, bool]:
+async def start_chat(
+    flow: FlowEnum, text_format: TextFormat
+) -> tuple[str, FlowResponse]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
             chat = QuestionAndPlaybookChat(text_format)
@@ -57,16 +63,15 @@ async def start_chat(flow: FlowEnum, text_format: TextFormat) -> tuple[str, str,
             chat = AwesomeChat()
 
     chat_id = uuid4().hex
-    answer = await chat.start_conversation()
-    flow_end = chat.flow_end
+    response = await chat.start_conversation()
 
-    if not flow_end:
+    if response.flow_suggestions is None:
         active_conversations[chat_id] = (chat, asyncio.Lock())
 
-    return (chat_id, answer, flow_end)
+    return (chat_id, response)
 
 
-async def user_message(conversation_id: str, message: str) -> tuple[list[str], bool]:
+async def user_message(conversation_id: str, message: str) -> FlowResponse:
     if conversation_id not in active_conversations:
         raise HTTPException(404, "This chat doesn't exist.")
 
@@ -76,18 +81,27 @@ async def user_message(conversation_id: str, message: str) -> tuple[list[str], b
         raise HTTPException(429, "Please wait for the previous answer.")
 
     async with lock:
-        messages = await chat.submit_message(message)
-        flow_end = chat.flow_end
+        response = await chat.submit_message(message)
 
-        if flow_end:
+        if response.flow_suggestions is not None:
             del active_conversations[conversation_id]
 
-    return (messages, flow_end)
+    return response
 
 
 @app.get("/", response_class=Response)
 async def index():
     return
+
+
+@app.get("/flow-suggestions", response_model=FlowSuggestionsResponse)
+async def flow_suggestions():
+    return FlowSuggestionsResponse(
+        flow_suggestions=[
+            FlowSuggestion.from_flow(FlowEnum.REMOTE_WORK_SCORE),
+            FlowSuggestion.from_flow(FlowEnum.QUESTIONS_AND_PLAYBOOK),
+        ]
+    )
 
 
 @app.post("/chats", response_model=StartChatResponse)
@@ -115,8 +129,12 @@ async def start_conversation(
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    (chat_id, answer, flow_end) = await start_chat(flow, text_format)
-    return StartChatResponse(chat_id=chat_id, message=answer, flow_end=flow_end)
+    (chat_id, response) = await start_chat(flow, text_format)
+    return StartChatResponse(
+        chat_id=chat_id,
+        message=response.response,
+        flow_suggestions=response.flow_suggestions,
+    )
 
 
 @app.delete("/chats/{chat_id}")
@@ -129,8 +147,10 @@ async def delete_conversation(chat_id: str):
 
 @app.post("/chats/{chat_id}/messages", response_model=SendMessageResponse)
 async def send_message(chat_id: str, content: str):
-    (messages, flow_end) = await user_message(chat_id, content)
-    return SendMessageResponse(messages=messages, flow_end=flow_end)
+    response = await user_message(chat_id, content)
+    return SendMessageResponse(
+        messages=response.response, flow_suggestions=response.flow_suggestions
+    )
 
 
 @app.post("/users", response_class=Response)

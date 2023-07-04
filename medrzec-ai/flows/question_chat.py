@@ -3,7 +3,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.schema import HumanMessage
 
 from ..conversation_chain import CleanConversationChain
-from .flow import Flow
+from .flow import Flow, FlowResponse
 
 PREDEFINED_MESSAGES = [
     HumanMessage(
@@ -36,8 +36,6 @@ FINAL_HUMAN_MESSAGE = "Start by asking the first question now."
 
 class QuestionChat(Flow):
     def __init__(self) -> None:
-        super().__init__()
-
         llm = ChatOpenAI(
             temperature=1, model="gpt-4"
         )  # pyright: ignore [reportGeneralTypeIssues]
@@ -45,8 +43,9 @@ class QuestionChat(Flow):
         memory.chat_memory.messages.extend(PREDEFINED_MESSAGES)
         self.chain = CleanConversationChain(llm=llm, memory=memory)
 
-    async def start_conversation(self) -> str:
+    async def start_conversation(self) -> FlowResponse[str]:
         return (await self.chain.acall(FINAL_HUMAN_MESSAGE))["response"]
 
-    async def submit_message(self, text: str) -> list[str]:
-        return [(await self.chain.acall(text))["response"]]
+    async def submit_message(self, text: str) -> FlowResponse[list[str]]:
+        response = (await self.chain.acall(text))["response"]
+        return FlowResponse([response])

@@ -8,13 +8,11 @@ from langchain.memory import ConversationBufferMemory
 from langchain.tools import tool
 from langchain.vectorstores import Pinecone
 
-from .flow import Flow
+from .flow import Flow, FlowResponse
 
 
 class PlaybookChat(Flow):
     def __init__(self, user_score: int) -> None:
-        super().__init__()
-
         self.user_score = user_score
 
         pinecone.init(
@@ -44,8 +42,8 @@ class PlaybookChat(Flow):
             memory=memory,
         )
 
-    async def start_conversation(self) -> str:
-        return await self.agent.arun(
+    async def start_conversation(self) -> FlowResponse[str]:
+        response = await self.agent.arun(
             input=f"""As an AI-powered chatbot, your goal is to help people managers become better at leading distributed teams. Your task is to help the user generate a bespoke plan for each company or team, pinpointing the areas that need improvement to optimize the remote work model. The plan can include recommendations on communication channels, collaboration, employee engagement, and more, based on chatbot vast dataset and understanding of effective remote work practices.
 
 You should be able to help the user by querying the playbook content and answering their questions or requests for help based on the playbook content or best practices from the world's top remote companies, such as GitLab, Doist, Buffer, or Automattic.
@@ -69,8 +67,11 @@ Please provide relevant and creative recommendations that are actionable and hel
 During the conversation, always ask follow-up questions to the user to keep the conversation going."""
         )
 
-    async def submit_message(self, text: str) -> list[str]:
-        return [await self.agent.arun(input=text)]
+        return FlowResponse(response)
+
+    async def submit_message(self, text: str) -> FlowResponse[list[str]]:
+        response = await self.agent.arun(input=text)
+        return FlowResponse([response])
 
     def get_relevant_fragments(self, query: str) -> list[str]:
         docs = self.docsearch.similarity_search(query)

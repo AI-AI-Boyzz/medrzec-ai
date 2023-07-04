@@ -8,7 +8,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
-from .flow import Flow
+from .flow import Flow, FlowResponse
 
 
 class AnswerException(Exception):
@@ -72,8 +72,6 @@ MAX_SCORE = sum(max(question.points) for question in LEADER_QUESTIONS)
 
 class RemoteWorkScoreChat(Flow):
     def __init__(self) -> None:
-        super().__init__()
-
         self.answers: list[int] = []
         self.retry = False
 
@@ -113,10 +111,11 @@ Ask the question and provide the possible answers. Use Markdown formatting. Add 
             agent=AgentType.OPENAI_FUNCTIONS,
         )
 
-    async def start_conversation(self) -> str:
-        return await self.next_question()
+    async def start_conversation(self) -> FlowResponse[str]:
+        response = await self.next_question()
+        return FlowResponse(response)
 
-    async def submit_message(self, text: str) -> list[str]:
+    async def submit_message(self, text: str) -> FlowResponse[list[str]]:
         question_index = len(self.answers)
         question = LEADER_QUESTIONS[question_index]
         available_answers = format_answers(question.answers)
@@ -141,10 +140,11 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
         except AnswerException as e:
             raise HTTPException(400, str(e)) from e
 
+        flow_end = False
         messages = [response]
 
         if question_index + 1 >= len(LEADER_QUESTIONS):
-            self.flow_end = True
+            flow_end = True
             points = calculate_points(LEADER_QUESTIONS, self.answers)
             score = calculate_score(points, MIN_SCORE, MAX_SCORE)
             messages.append(
@@ -154,7 +154,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
         elif not self.retry:
             messages.append(await self.next_question())
 
-        return messages
+        return FlowResponse(messages, flow_suggestions=[] if flow_end else None)
 
     async def next_question(self) -> str:
         self.retry = True
@@ -169,7 +169,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
             answers=available_answers,
         )
 
-    def submit_answer(self, answer: str):
+    def submit_answer(self, answer: str) -> None:
         try:
             answer_int = math.ceil(float(answer))
         except ValueError as e:
