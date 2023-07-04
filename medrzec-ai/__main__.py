@@ -5,7 +5,6 @@ import hmac
 import os
 import secrets
 from asyncio import Lock
-from enum import StrEnum, auto
 from uuid import uuid4
 
 import dotenv
@@ -15,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from . import FlowEnum, TextFormat
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow
@@ -29,12 +29,6 @@ db = Database()
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
 client = httpx.AsyncClient()
-
-
-class FlowEnum(StrEnum):
-    QUESTIONS_AND_PLAYBOOK = auto()
-    REMOTE_WORK_SCORE = auto()
-    AWESOME = auto()
 
 
 class StartChatResponse(BaseModel):
@@ -53,10 +47,10 @@ class ModifyUser(BaseModel):
     email: str
 
 
-async def start_chat(flow: FlowEnum) -> tuple[str, str, bool]:
+async def start_chat(flow: FlowEnum, text_format: TextFormat) -> tuple[str, str, bool]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
-            chat = QuestionAndPlaybookChat()
+            chat = QuestionAndPlaybookChat(text_format)
         case FlowEnum.REMOTE_WORK_SCORE:
             chat = RemoteWorkScoreChat()
         case FlowEnum.AWESOME:
@@ -98,7 +92,10 @@ async def index():
 
 @app.post("/chats", response_model=StartChatResponse)
 async def start_conversation(
-    flow: FlowEnum, id_token: str | None = None, api_key: str | None = None
+    flow: FlowEnum,
+    id_token: str | None = None,
+    api_key: str | None = None,
+    text_format: TextFormat = TextFormat.MARKDOWN,
 ):
     if id_token is not None:
         token_info = await fetch_token(id_token)
@@ -118,7 +115,7 @@ async def start_conversation(
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    (chat_id, answer, flow_end) = await start_chat(flow)
+    (chat_id, answer, flow_end) = await start_chat(flow, text_format)
     return StartChatResponse(chat_id=chat_id, message=answer, flow_end=flow_end)
 
 
