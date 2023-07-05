@@ -266,7 +266,7 @@ class RemoteWorkScoreChat(Flow):
         self.questions = get_questions(role, text_format)
         self.answers: list[int] = []
         self.retry = False
-        self.memory = ChatMemory(max_size=10)
+        self.memory = ChatMemory(max_size=15)
 
         llm = ChatOpenAI(temperature=1, model="gpt-4", client=None)
 
@@ -303,7 +303,7 @@ AI: """,
                 Tool(
                     name="submit_answer",
                     func=self.submit_answer,
-                    description="submit user's answer to the question",
+                    description="Submit user's answer to the question.",
                 ),
             ],
             llm,
@@ -356,6 +356,7 @@ AI: """,
             )
         elif not self.retry:
             self.memory.add_human_message(text)
+            self.memory.add_ai_message(response)
             messages.append(await self.next_question())
 
         return FlowResponse(
