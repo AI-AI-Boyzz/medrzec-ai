@@ -9,7 +9,13 @@ from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
+from .. import TextFormat
 from .flow import Flow, FlowResponse
+
+PLAYBOOK_URL = "https://remotehow.notion.site/Remote-Work-Playbook-Template-b537fb9b503f4a0a9296774d464777d6"
+PLAYBOOK_UPSELL = (
+    "Get access to the world’s best playbook on #remotework, and improve your score."
+)
 
 
 class AnswerException(Exception):
@@ -28,7 +34,7 @@ class Question:
     points: list[int] = dataclasses.field(default_factory=lambda: [-2, -1, 0, 1, 2])
 
 
-def get_questions(role: TeamRoles) -> list[Question]:
+def get_questions(role: TeamRoles, text_format: TextFormat) -> list[Question]:
     questions = [
         Question(
             "What is your **most common work setup**?",
@@ -259,8 +265,10 @@ def get_questions(role: TeamRoles) -> list[Question]:
 
 
 class RemoteWorkScoreChat(Flow):
-    def __init__(self, role: TeamRoles) -> None:
-        self.questions = get_questions(role)
+    def __init__(self, role: TeamRoles, text_format: TextFormat) -> None:
+        self.text_format = text_format
+
+        self.questions = get_questions(role, text_format)
         self.answers: list[int] = []
         self.retry = False
 
@@ -329,17 +337,22 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
         except AnswerException as e:
             raise HTTPException(400, str(e)) from e
 
-        flow_end = False
-        messages = [response]
+        flow_end: bool = False
+        score: int | None = None
+        messages: list[str] = [response]
 
         if question_index + 1 >= len(self.questions):
             flow_end = True
             score = calculate_score(self.questions, self.answers)
-            messages.append(f"You've got a {score}% Remote Work Score.")
+            messages.append(score_to_message(score, self.text_format))
         elif not self.retry:
             messages.append(await self.next_question())
 
-        return FlowResponse(messages, flow_suggestions=[] if flow_end else None)
+        return FlowResponse(
+            messages,
+            flow_suggestions=[] if flow_end else None,
+            extra={"remote_work_score": score} if score is not None else {},
+        )
 
     async def next_question(self) -> str:
         self.retry = True
@@ -390,3 +403,34 @@ def calculate_score(questions: list[Question], answers: list[int]) -> int:
 
     score = (points - min_points) / (max_points - min_points)
     return math.ceil(score * 100)
+
+
+def score_to_message(score: int, text_format: TextFormat) -> str:
+    match text_format:
+        case TextFormat.MARKDOWN:
+            bold = "**"
+            paragraph = "\n\n"
+            playbook = f"[{PLAYBOOK_UPSELL}]({PLAYBOOK_URL})"
+        case TextFormat.SLACK:
+            bold = "*"
+            paragraph = "\n"
+            playbook = f"<{PLAYBOOK_URL}|{PLAYBOOK_UPSELL}>"
+
+    playbook += f"{paragraph}Let’s dive in 🚀"
+
+    message = f"{bold}Your Remote Work Score is {score}%!{bold} "
+
+    if score > 90:
+        message += """🧠
+You are a REMOTE PRO — super well done! ⭐⭐⭐ Keep rocking!"""
+
+    elif score > 50:
+        message += f"""👏👏👏
+You are familiar with remote work but need more guidance to feel fully comfortable in it. Let us help you! 🏗️
+{playbook}"""
+
+    else:
+        message += f"""😅
+You need more assistance with remote work to feel fully comfortable in it. Let us help you! 🏗️
+{playbook}"""
+    return message.replace("\n", paragraph)

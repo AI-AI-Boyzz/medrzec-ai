@@ -5,7 +5,8 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
-from langchain.tools import tool
+from langchain.schema.output_parser import OutputParserException
+from langchain.tools import Tool
 from langchain.vectorstores import Pinecone
 
 from .flow import Flow, FlowResponse
@@ -19,32 +20,37 @@ class PlaybookChat(Flow):
             os.environ["PINECONE_API_KEY"], environment=os.environ["PINECONE_ENV"]
         )
         self.docsearch = Pinecone.from_existing_index(
-            "playbook", OpenAIEmbeddings()  # pyright: ignore [reportGeneralTypeIssues]
+            "playbook", OpenAIEmbeddings(client=None)
         )
 
-        @tool
-        def query_playbook(query: str) -> str:
-            """Searches the People Managers guide for the query."""
+        async def query_playbook(query: str) -> str:
             return "\n".join(self.get_relevant_fragments(query))
 
-        tools = [query_playbook]
+        tools = [
+            Tool(
+                "query_playbook",
+                str,  # dummy sync function
+                "Searches the People Managers guide for the query.",
+                coroutine=query_playbook,
+            )
+        ]
 
         memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
 
         self.agent = initialize_agent(
-            tools,  # pyright: ignore [reportGeneralTypeIssues]
-            ChatOpenAI(
-                temperature=0.9, model="gpt-4"
-            ),  # pyright: ignore [reportGeneralTypeIssues]
+            tools,
+            ChatOpenAI(temperature=0.9, model="gpt-4", client=None),
             AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
             memory=memory,
         )
 
     async def start_conversation(self) -> FlowResponse[str]:
-        response = await self.agent.arun(
-            input=f"""As an AI-powered chatbot, your goal is to help people managers become better at leading distributed teams. Your task is to help the user generate a bespoke plan for each company or team, pinpointing the areas that need improvement to optimize the remote work model. The plan can include recommendations on communication channels, collaboration, employee engagement, and more, based on chatbot vast dataset and understanding of effective remote work practices.
+        for _ in range(5):
+            try:
+                response = await self.agent.arun(
+                    input=f"""As an AI-powered chatbot, your goal is to help people managers become better at leading distributed teams. Your task is to help the user generate a bespoke plan for each company or team, pinpointing the areas that need improvement to optimize the remote work model. The plan can include recommendations on communication channels, collaboration, employee engagement, and more, based on chatbot vast dataset and understanding of effective remote work practices.
 
 You should be able to help the user by querying the playbook content and answering their questions or requests for help based on the playbook content or best practices from the world's top remote companies, such as GitLab, Doist, Buffer, or Automattic.
 
@@ -64,8 +70,14 @@ Please add information about: 1. Problem description (eg. As a Director of Marke
 
 Please provide relevant and creative recommendations that are actionable and helpful to the user's specific needs and challenges. Encourage flexible and creative advice that addresses unique concerns while still maintaining a focus on accuracy and effectiveness.
 
-During the conversation, always ask follow-up questions to the user to keep the conversation going."""
-        )
+Format your responses with Markdown and add emojis. During the conversation, always ask follow-up questions to the user to keep the conversation going."""
+                )
+            except OutputParserException as e:
+                print(e)
+            else:
+                break
+        else:  # output parsing failed 5 times in a row
+            response = "Failed to generate a reply, sorry."
 
         return FlowResponse(response)
 

@@ -19,7 +19,8 @@ from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow, FlowResponse, FlowSuggestion
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
-from .flows.remote_work_score import RemoteWorkScoreChat, TeamRoles
+from .flows.remote_work_score import TeamRoles
+from .flows.remote_work_score_and_playbook import RemoteWorkScoreAndPlaybookChat
 from .flows.remote_work_score_intro import RemoteWorkScoreIntroChat
 
 dotenv.load_dotenv()
@@ -61,9 +62,9 @@ async def start_chat(
         case FlowEnum.REMOTE_WORK_SCORE_INTRO:
             chat = RemoteWorkScoreIntroChat()
         case FlowEnum.REMOTE_WORK_SCORE_TEAM_MEMBER:
-            chat = RemoteWorkScoreChat(TeamRoles.TEAM_MEMBER)
+            chat = RemoteWorkScoreAndPlaybookChat(TeamRoles.TEAM_MEMBER, text_format)
         case FlowEnum.REMOTE_WORK_SCORE_PEOPLE_LEADER:
-            chat = RemoteWorkScoreChat(TeamRoles.PEOPLE_LEADER)
+            chat = RemoteWorkScoreAndPlaybookChat(TeamRoles.PEOPLE_LEADER, text_format)
         case FlowEnum.AWESOME:
             chat = AwesomeChat()
 
