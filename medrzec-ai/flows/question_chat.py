@@ -44,7 +44,8 @@ class QuestionChat(Flow):
         self.chain = CleanConversationChain(llm=llm, memory=memory)
 
     async def start_conversation(self) -> FlowResponse[str]:
-        return (await self.chain.acall(FINAL_HUMAN_MESSAGE))["response"]
+        response = (await self.chain.acall(FINAL_HUMAN_MESSAGE))["response"]
+        return FlowResponse(response)
 
     async def submit_message(self, text: str) -> FlowResponse[list[str]]:
         response = (await self.chain.acall(text))["response"]
