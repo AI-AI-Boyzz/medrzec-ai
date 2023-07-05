@@ -1,4 +1,4 @@
-from .. import TextFormat
+from ..utils.text_utils import TextFormat
 from .flow import Flow, FlowResponse
 from .playbook_chat import PlaybookChat
 from .remote_work_score import RemoteWorkScoreChat, TeamRoles

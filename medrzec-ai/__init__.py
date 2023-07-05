@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum, StrEnum, auto
+from enum import StrEnum, auto
 
 from pydantic import BaseModel
-
-
-class TextFormat(Enum):
-    MARKDOWN = auto()
-    SLACK = auto()
 
 
 class FlowEnum(StrEnum):

@@ -8,14 +8,9 @@ from langchain.agents import AgentType, Tool, initialize_agent
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
-
-from .. import TextFormat
+from ..utils import text_utils
+from ..utils.text_utils import TextFormat
 from .flow import Flow, FlowResponse
-
-PLAYBOOK_URL = "https://remotehow.notion.site/Remote-Work-Playbook-Template-b537fb9b503f4a0a9296774d464777d6"
-PLAYBOOK_UPSELL = (
-    "Get access to the world’s best playbook on #remotework, and improve your score."
-)
 
 
 class AnswerException(Exception):
@@ -344,7 +339,9 @@ Reply with some feedback to the user. Use Markdown formatting and add emojis."""
         if question_index + 1 >= len(self.questions):
             flow_end = True
             score = calculate_score(self.questions, self.answers)
-            messages.append(score_to_message(score, self.text_format))
+            messages.append(
+                text_utils.remote_work_score_message(score, self.text_format)
+            )
         elif not self.retry:
             messages.append(await self.next_question())
 
@@ -403,34 +400,3 @@ def calculate_score(questions: list[Question], answers: list[int]) -> int:
 
     score = (points - min_points) / (max_points - min_points)
     return math.ceil(score * 100)
-
-
-def score_to_message(score: int, text_format: TextFormat) -> str:
-    match text_format:
-        case TextFormat.MARKDOWN:
-            bold = "**"
-            paragraph = "\n\n"
-            playbook = f"[{PLAYBOOK_UPSELL}]({PLAYBOOK_URL})"
-        case TextFormat.SLACK:
-            bold = "*"
-            paragraph = "\n"
-            playbook = f"<{PLAYBOOK_URL}|{PLAYBOOK_UPSELL}>"
-
-    playbook += f"{paragraph}Let’s dive in 🚀"
-
-    message = f"{bold}Your Remote Work Score is {score}%!{bold} "
-
-    if score > 90:
-        message += """🧠
-You are a REMOTE PRO — super well done! ⭐⭐⭐ Keep rocking!"""
-
-    elif score > 50:
-        message += f"""👏👏👏
-You are familiar with remote work but need more guidance to feel fully comfortable in it. Let us help you! 🏗️
-{playbook}"""
-
-    else:
-        message += f"""😅
-You need more assistance with remote work to feel fully comfortable in it. Let us help you! 🏗️
-{playbook}"""
-    return message.replace("\n", paragraph)

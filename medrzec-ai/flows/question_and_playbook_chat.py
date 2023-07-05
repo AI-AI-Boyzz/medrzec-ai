@@ -1,10 +1,10 @@
 import re
 
-from .. import TextFormat
+from ..utils.text_utils import TextFormat
 from .flow import Flow, FlowResponse
 from .playbook_chat import PlaybookChat
 from .question_chat import QuestionChat
-from .remote_work_score import score_to_message
+from ..utils import text_utils
 
 
 class QuestionAndPlaybookChat(Flow):
@@ -22,7 +22,9 @@ class QuestionAndPlaybookChat(Flow):
         if match := re.search(r"Score: (\d+)", response, re.IGNORECASE):
             user_score = int(match[1])
 
-            score_message = score_to_message(user_score, self.text_format)
+            score_message = text_utils.remote_work_score_message(
+                user_score, self.text_format
+            )
 
             self.flow = PlaybookChat(user_score)
             response = (await self.flow.start_conversation()).response

@@ -13,8 +13,9 @@ import sqlalchemy.exc
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-from . import FlowEnum, TextFormat
+from .utils import api_utils
+from . import FlowEnum
+from .utils.text_utils import TextFormat
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow, FlowResponse, FlowSuggestion
@@ -22,7 +23,7 @@ from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
 from .flows.remote_work_score import TeamRoles
 from .flows.remote_work_score_and_playbook import RemoteWorkScoreAndPlaybookChat
 from .flows.remote_work_score_intro import RemoteWorkScoreIntroChat
-from .utils import EmojiReplacer
+from .utils.text_utils import EmojiReplacer
 
 dotenv.load_dotenv()
 
@@ -159,6 +160,7 @@ async def delete_conversation(chat_id: str):
 
 @app.post("/chats/{chat_id}/messages", response_model=SendMessageResponse)
 async def send_message(chat_id: str, content: str):
+    api_utils.limit_input_len(content)
     response = await user_message(chat_id, content)
     return SendMessageResponse(
         messages=response.response,
