@@ -1,7 +1,7 @@
 from langchain.chat_models import ChatOpenAI
 
 from .. import FlowEnum
-from .flow import Flow, FlowResponse, FlowSuggestion
+from .flow import Flow, FlowResponse
 
 
 class AwesomeChat(Flow):
@@ -14,7 +14,7 @@ class AwesomeChat(Flow):
             " Use Markdown formatting. Add emojis."
         )
         return FlowResponse(
-            response, flow_suggestions=[FlowSuggestion.from_flow(FlowEnum.AWESOME)]
+            response, flow_suggestions=[FlowEnum.AWESOME.as_suggestion()]
         )
 
     async def submit_message(self, _: str) -> FlowResponse[list[str]]:

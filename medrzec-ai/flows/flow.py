@@ -1,29 +1,10 @@
 import dataclasses
 from abc import ABC, abstractmethod
-from typing import Generic, Self, TypeVar
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel
-
-from .. import FlowEnum
+from .. import FlowSuggestion
 
 T = TypeVar("T")
-
-
-class FlowSuggestion(BaseModel):
-    id: str
-    text: str
-
-    @classmethod
-    def from_flow(cls, flow: FlowEnum) -> Self:
-        match flow:
-            case FlowEnum.QUESTIONS_AND_PLAYBOOK:
-                text = "Find out and help improve my Remote Work Score"
-            case FlowEnum.REMOTE_WORK_SCORE:
-                text = "Find out my Leader Remote Work Score"
-            case FlowEnum.AWESOME:
-                text = "Tell me how awesome I am"
-
-        return cls(id=flow, text=text)
 
 
 @dataclasses.dataclass

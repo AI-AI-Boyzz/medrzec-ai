@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import math
+from enum import Enum, auto
 
 from fastapi import HTTPException
 from langchain.agents import AgentType, Tool, initialize_agent
@@ -15,63 +16,251 @@ class AnswerException(Exception):
     pass
 
 
+class TeamRoles(Enum):
+    TEAM_MEMBER = auto()
+    PEOPLE_LEADER = auto()
+
+
 @dataclasses.dataclass
 class Question:
     question: str
     answers: list[str] | None = None
-    points: list[int] = dataclasses.field(default_factory=lambda: list(range(-2, 3)))
+    points: list[int] = dataclasses.field(default_factory=lambda: [-2, -1, 0, 1, 2])
 
 
-LEADER_QUESTIONS = [
-    Question(
-        "How easily are you able to **manage projects** remotely?",
-    ),
-    Question(
-        "How comfortable do you feel with **running the team** remotely?",
-    ),
-    Question(
-        "Your **team's work effectiveness** is:",
-        ["Better at the office", "No difference", "Better remotely"],
-        [-2, 0, 2],
-    ),
-    Question(
-        "Our **team habits** include:",
+def get_questions(role: TeamRoles) -> list[Question]:
+    questions = [
+        Question(
+            "What is your **most common work setup**?",
+            [
+                "100% from the office",
+                "Mix remote & office (mandate days)",
+                "Mix remote & office (full flexibility)",
+                "100% remotely",
+                "Other",
+            ],
+            [0] * 5,
+        ),
+        Question("Do you **like working remotely**?"),
+        Question(
+            "Are you able to **disconnect from work mentally** at the end of the day?"
+        ),
+        Question(
+            "Do you want to **grow professionally and learn** new skills at work?"
+        ),
+        Question(
+            "When someone assignes you tasks, can you **get them done easily**, "
+            "because you're a self-starter and independent in your work habits?",
+        ),
+        Question("Do you feel you're **effective at self-organizing** your work?"),
+        Question("Do you feel that **the course of your day depends on you**?"),
+        Question("Can you be **productive anywhere** — the place doesn't matter?"),
+    ]
+
+    if role is TeamRoles.PEOPLE_LEADER:
+        questions.extend(
+            [
+                Question("Can you easily **manage projects** remotely?"),
+                Question("Do you **feel comfortable running the team** remotely?"),
+            ]
+        )
+
+    if role is not TeamRoles.PEOPLE_LEADER:
+        questions.append(
+            Question(
+                "Imagine you need to **ask your teammate a question** about some project details. "
+                "What do you do?",
+                [
+                    "I grab the phone and have a **quick call**",
+                    "I catch them on a **chat** (e.g. Teams or Slack) ",
+                    "I send them an **email**",
+                    "I schedule a **short meeting**",
+                    "I don't like to bother others - "
+                    "I try to find the answer by myself **in project files**.",
+                ],
+                [-1, 1, 1, -1, 1],
+            )
+        )
+
+    if role is TeamRoles.PEOPLE_LEADER:
+        questions.append(
+            Question(
+                "Imagine you need to **ask your employee a question** about some project details. "
+                "What do you do?",
+                [
+                    "I grab the phone and have a **quick call**",
+                    "I catch them on a **chat** (e.g. Teams or Slack) ",
+                    "I send them an **email**",
+                    "I schedule a **short meeting**",
+                    "I don't like to bother others - "
+                    "I try to find the answer by myself **in project files**.",
+                ],
+                [-1, 1, 1, -1, 1],
+            )
+        )
+
+    questions.extend(
         [
-            "Celebrate successes together (eg. completing the project)",
-            "Hang out and talk about non-work-related topics",
-            "Meet in-person for special team building events",
-            "Organize personal events, e.g. volunteer actions, birthdays celebration",
-            "None of the above",
-        ],
-        [1, 1, 1, 1, 0],
-    ),
-    Question(
-        "Do you think everyone on your team **feels included**?",
-    ),
-    Question(
-        "Do you have access to proper **training on how to manage a team remotely**?"
-    ),
-    Question(
-        "Can you share **honest feedback with people you report to** which you discuss and action is taken?",
-    ),
-    Question(
-        "Do you receive clear information from people you report to about **what your and your team's tasks are**?",
-    ),
-    Question(
-        "Can you **share honest feedback to your team employees** and have an open discussion about it?"
-    ),
-    Question(
-        "Do you give clear information to people in your team about **what their tasks are**?"
-    ),
-    Question("Do you know **how your employees feel** even when you work remotely?"),
-]
+            Question(
+                "When you **write messages**, you always:",
+                [
+                    "Add all the necessary information to provide full context",
+                    "Make sure it has the right tone so recipients feel respected and included",
+                    "Include Call-to-Action with clear deadline",
+                    "Use bolded fonts and some other font distinctions",
+                    "None of above",
+                ],
+                [1, 1, 1, 1, 0],
+            ),
+            Question(
+                "Final versions of **your files** are kept:",
+                [
+                    "On my computer desktop only",
+                    "In folders on my laptop's hard drive",
+                    "In the cloud, grouped in folders that my team has access to",
+                    "In project documents/channels, e.g. on Notion, Teams",
+                ],
+                [-1, 0, 1, 1],
+            ),
+            Question(
+                "When I **organize a meeting**, I:",
+                [
+                    "Double check if the meeting is needed, or if it could be done asynchronously",
+                    "Add details to the invite incl. agenda, participants roles, goals",
+                    "Share a collaborative document to review before the meeting",
+                    "Assign roles to each participant",
+                    'Take notes and add "to-do\'s" during the meeting',
+                    "Send a written summary after the meeting to all stakeholders giving time for everyone to give feedback.",
+                    "None of above",
+                ],
+                [1, 1, 1, 1, 1, 1, 0],
+            ),
+            Question(
+                "For the bulk of my daily tasks, I prefer to work:",
+                ["At the office", "No difference", "Remotely"],
+                [-2, 0, 2],
+            ),
+            Question(
+                'I can easily access a **"single source of truth"** '
+                "with all operational information (documents, policies, announcements, etc.)"
+            ),
+            Question(
+                "I **spend weekly X% of my time** in meetings.",
+                ["up to 10%", "11%-25%", "26%-50%", "51%-75%", "more than 75%"],
+                [2, 1, 0, -1, -2],
+            ),
+            Question(
+                "**Active engagement in meetings** is:",
+                ["Better at the office", "No different", "Better remotely"],
+                [-2, 0, 2],
+            ),
+            Question(
+                "**Learning new tasks and skills** is:",
+                ["Better at the office", "No different", "Better remotely"],
+                [-2, 0, 2],
+            ),
+            Question(
+                "I had **training** that helped me **work remotely effectively**."
+            ),
+            Question(
+                "I have clear and **agreed-upon metrics** that are tied to my ongoing job performance.",
+                ["Yes", "No"],
+                [1, 0],
+            ),
+        ]
+    )
 
-MIN_SCORE = sum(min(question.points) for question in LEADER_QUESTIONS)
-MAX_SCORE = sum(max(question.points) for question in LEADER_QUESTIONS)
+    if role is TeamRoles.PEOPLE_LEADER:
+        questions.append(
+            Question(
+                "My **team's work effectiveness** is:",
+                ["Better at the office", "No different", "Better remotely"],
+                [-2, 0, 2],
+            )
+        )
+
+    questions.extend(
+        [
+            Question(
+                "My **team has clear rules** on how we:",
+                [
+                    "**Work together** (eg. when do we work, how do we collaborate, how do we plan work, etc.)",
+                    "**Communicate** (e.g. when to communicate synchronously vs asynchronously, what tools to use, etc.)",
+                    "**Run meetings** (e.g. when and how to schedule, checklist - before, during, after)",
+                    "**Manage information** (e.g. documenting knowledge about projects, internal processes, etc.)",
+                    "None of the above",
+                ],
+                [1, 1, 1, 1, 0],
+            ),
+            Question(
+                "Our team habits include:",
+                [
+                    "**Celebrate successes** together (eg. completing the project)",
+                    "**Hang out** and talk about non-work-related topics",
+                    "**Meet in-person** for special team building events",
+                    "**Organize personal events**, e.g. volunteer actions, birthdays celebration",
+                    "None of the above",
+                ],
+                [1, 1, 1, 1, 0],
+            ),
+            Question("I think there is **transparency in communication** on my team."),
+            Question(
+                "I think there is **transparency in decision-making** on my team."
+            ),
+        ]
+    )
+
+    if role is not TeamRoles.PEOPLE_LEADER:
+        questions.extend(
+            [
+                Question(
+                    "I feel that **my team/project leader knows how to manage a distributed team**."
+                ),
+                Question(
+                    "I can **share honest feedback with leadership**, which we discuss and action is taken."
+                ),
+                Question(
+                    "I receive clear information from my team/project leader about **what my tasks are**."
+                ),
+            ]
+        )
+
+    questions.extend(
+        [
+            Question("I **trust** the people on my team."),
+            Question("I feel like a **valuable member** of my team."),
+        ]
+    )
+
+    if role is TeamRoles.PEOPLE_LEADER:
+        questions.extend(
+            [
+                Question("I think everyone on my team **feels included**."),
+                Question(
+                    "I have access to proper **training on how to manage team remotely**."
+                ),
+                Question(
+                    "I can **share honest feedback with people I report to** which we discuss and action is taken."
+                ),
+                Question(
+                    "I receive clear information from people I report to about **what my team's and my tasks are**."
+                ),
+                Question(
+                    "I **share honest feedback to my team employees** and have an open discussion about it."
+                ),
+                Question(
+                    "I give clear information to people in my team about **what their tasks are**."
+                ),
+                Question("I know **how my employees feel** even when I work remotely."),
+            ]
+        )
+
+    return questions
 
 
 class RemoteWorkScoreChat(Flow):
-    def __init__(self) -> None:
+    def __init__(self, role: TeamRoles) -> None:
+        self.questions = get_questions(role)
         self.answers: list[int] = []
         self.retry = False
 
@@ -117,7 +306,7 @@ Ask the question and provide the possible answers. Use Markdown formatting. Add 
 
     async def submit_message(self, text: str) -> FlowResponse[list[str]]:
         question_index = len(self.answers)
-        question = LEADER_QUESTIONS[question_index]
+        question = self.questions[question_index]
         available_answers = format_answers(question.answers)
 
         try:
@@ -143,14 +332,10 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
         flow_end = False
         messages = [response]
 
-        if question_index + 1 >= len(LEADER_QUESTIONS):
+        if question_index + 1 >= len(self.questions):
             flow_end = True
-            points = calculate_points(LEADER_QUESTIONS, self.answers)
-            score = calculate_score(points, MIN_SCORE, MAX_SCORE)
-            messages.append(
-                f"You've got {points} points which results in "
-                f"a {score}% Leader Remote Work Score."
-            )
+            score = calculate_score(self.questions, self.answers)
+            messages.append(f"You've got a {score}% Remote Work Score.")
         elif not self.retry:
             messages.append(await self.next_question())
 
@@ -159,12 +344,12 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
     async def next_question(self) -> str:
         self.retry = True
         question_index = len(self.answers)
-        question = LEADER_QUESTIONS[question_index]
+        question = self.questions[question_index]
         available_answers = format_answers(question.answers)
 
         return await self.question_asker.arun(
             question_number=question_index + 1,
-            question_amount=len(LEADER_QUESTIONS),
+            question_amount=len(self.questions),
             question=question.question,
             answers=available_answers,
         )
@@ -177,7 +362,7 @@ Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
                 f"{answer!r} is not a valid option. Try again."
             ) from e
 
-        answers = LEADER_QUESTIONS[len(self.answers)].answers
+        answers = self.questions[len(self.answers)].answers
         answers = 5 if answers is None else len(answers)
 
         if answer_int > answers or answer_int < 1:
@@ -194,13 +379,14 @@ def format_answers(answers: list[str] | None) -> str:
         return "\n".join(f"{i}. {answer}" for i, answer in enumerate(answers, 1))
 
 
-def calculate_points(questions: list[Question], answers: list[int]) -> int:
-    return sum(
+def calculate_score(questions: list[Question], answers: list[int]) -> int:
+    min_points = sum(min(question.points) for question in questions)
+    max_points = sum(max(question.points) for question in questions)
+
+    points = sum(
         question.points[answer]
         for question, answer in zip(questions, answers, strict=True)
     )
 
-
-def calculate_score(points: int, min_points: int, max_points: int) -> int:
     score = (points - min_points) / (max_points - min_points)
     return math.ceil(score * 100)
