@@ -22,6 +22,7 @@ from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
 from .flows.remote_work_score import TeamRoles
 from .flows.remote_work_score_and_playbook import RemoteWorkScoreAndPlaybookChat
 from .flows.remote_work_score_intro import RemoteWorkScoreIntroChat
+from .utils import EmojiReplacer
 
 dotenv.load_dotenv()
 
@@ -31,6 +32,9 @@ db = Database()
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
 client = httpx.AsyncClient()
+emoji_replacer = EmojiReplacer()
+
+asyncio.get_event_loop().create_task(emoji_replacer.load_emojis(client))
 
 
 class FlowSuggestionsResponse(BaseModel):
@@ -70,6 +74,7 @@ async def start_chat(
 
     chat_id = uuid4().hex
     response = await chat.start_conversation()
+    response.response = emoji_replacer.replace_emojis(response.response)
 
     if response.flow_suggestions is None:
         active_conversations[chat_id] = (chat, asyncio.Lock())
@@ -88,6 +93,7 @@ async def user_message(conversation_id: str, message: str) -> FlowResponse:
 
     async with lock:
         response = await chat.submit_message(message)
+        response.response = list(map(emoji_replacer.replace_emojis, response.response))
 
         if response.flow_suggestions is not None:
             del active_conversations[conversation_id]
@@ -138,7 +144,7 @@ async def start_conversation(
     (chat_id, response) = await start_chat(flow, text_format)
     return StartChatResponse(
         chat_id=chat_id,
-        message=response.response,
+        message=emoji_replacer.replace_emojis(response.response),
         flow_suggestions=response.flow_suggestions,
     )
 
@@ -155,7 +161,8 @@ async def delete_conversation(chat_id: str):
 async def send_message(chat_id: str, content: str):
     response = await user_message(chat_id, content)
     return SendMessageResponse(
-        messages=response.response, flow_suggestions=response.flow_suggestions
+        messages=response.response,
+        flow_suggestions=response.flow_suggestions,
     )
 
 

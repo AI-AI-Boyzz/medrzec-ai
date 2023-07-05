@@ -11,7 +11,7 @@ class AwesomeChat(Flow):
     async def start_conversation(self) -> FlowResponse[str]:
         response = await self.llm.apredict(
             "Tell the user how awesome they are and how much you like them."
-            " Use Markdown formatting. Add emojis."
+            " Use Markdown formatting and add emojis."
         )
         return FlowResponse(
             response, flow_suggestions=[FlowEnum.AWESOME.as_suggestion()]

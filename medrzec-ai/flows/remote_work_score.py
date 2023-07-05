@@ -292,7 +292,7 @@ Question {question_number} of {question_amount}:
 Possible answers:
 {answers}
 
-Ask the question and provide the possible answers. Use Markdown formatting. Add emojis.""",
+Ask the question and provide the possible answers. Use Markdown formatting and add emojis.""",
             ),
         )
 
@@ -332,7 +332,7 @@ The user's response was: "{text}".
 
 If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
 
-Reply with some feedback to the user. Use Markdown formatting. Add emojis.""",
+Reply with some feedback to the user. Use Markdown formatting and add emojis.""",
             )
         except AnswerException as e:
             raise HTTPException(400, str(e)) from e
