@@ -39,6 +39,29 @@ class EmojiReplacer:
         return text
 
 
+class ChatMemory:
+    def __init__(self, max_size: int) -> None:
+        self.max_size = max_size
+        self.memory: list[str] = []
+
+    def _add_message(self, text: str) -> None:
+        self.memory.append(text)
+        if len(self.memory) > self.max_size:
+            self.memory.pop(0)
+
+    def add_human_message(self, text: str) -> None:
+        self._add_message(f"Human: {text}")
+
+    def add_ai_message(self, text: str) -> None:
+        self._add_message(f"AI: {text}")
+
+    def format_history(self) -> str:
+        if self.memory:
+            return "\n\n".join(self.memory)
+        else:
+            return "Chat history is empty"
+
+
 def remote_work_score_message(score: int, text_format: TextFormat) -> str:
     match text_format:
         case TextFormat.MARKDOWN:

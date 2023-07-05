@@ -19,8 +19,8 @@ class QuestionAndPlaybookChat(Flow):
     async def submit_message(self, text: str) -> FlowResponse[list[str]]:
         response = (await self.flow.submit_message(text)).response[0]
 
-        if match := re.search(r"Score: (\d+)", response, re.IGNORECASE):
-            user_score = int(match[1])
+        if match := re.search(r"Score: (?P<score>\d+)", response, re.IGNORECASE):
+            user_score = int(match["score"])
 
             score_message = text_utils.remote_work_score_message(
                 user_score, self.text_format

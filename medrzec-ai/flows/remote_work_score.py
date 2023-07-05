@@ -9,7 +9,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from ..utils import text_utils
-from ..utils.text_utils import TextFormat
+from ..utils.text_utils import TextFormat, ChatMemory
 from .flow import Flow, FlowResponse
 
 
@@ -266,6 +266,7 @@ class RemoteWorkScoreChat(Flow):
         self.questions = get_questions(role, text_format)
         self.answers: list[int] = []
         self.retry = False
+        self.memory = ChatMemory(max_size=10)
 
         llm = ChatOpenAI(temperature=1, model="gpt-4", client=None)
 
@@ -277,9 +278,13 @@ class RemoteWorkScoreChat(Flow):
                     "question_amount",
                     "question",
                     "answers",
+                    "history",
                 ],
                 template="""\
 You're a conversational AI agent designed to ask user questions regarding their remote work experience.
+
+Previously asked questions for reference:
+{history}
 
 Question {question_number} of {question_amount}:
 {question}
@@ -287,7 +292,9 @@ Question {question_number} of {question_amount}:
 Possible answers:
 {answers}
 
-Ask the question and provide the possible answers. Use Markdown formatting and add emojis.""",
+Ask the question and provide the possible answers. Use Markdown formatting and add emojis.
+
+AI: """,
             ),
         )
 
@@ -318,6 +325,9 @@ Ask the question and provide the possible answers. Use Markdown formatting and a
                 f"""\
 You're a conversational AI agent designed to parse user's responses to a questionnaire regarding their remote work experience.
 
+Previously asked questions for reference:
+{self.memory.format_history()}
+
 The user was asked: "{question.question}".
 
 The possible answers are:
@@ -327,7 +337,9 @@ The user's response was: "{text}".
 
 If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
 
-Reply with some feedback to the user. Use Markdown formatting and add emojis.""",
+Reply with some feedback to the user. Use Markdown formatting and add emojis.
+
+AI: """,
             )
         except AnswerException as e:
             raise HTTPException(400, str(e)) from e
@@ -343,6 +355,7 @@ Reply with some feedback to the user. Use Markdown formatting and add emojis."""
                 text_utils.remote_work_score_message(score, self.text_format)
             )
         elif not self.retry:
+            self.memory.add_human_message(text)
             messages.append(await self.next_question())
 
         return FlowResponse(
@@ -357,12 +370,16 @@ Reply with some feedback to the user. Use Markdown formatting and add emojis."""
         question = self.questions[question_index]
         available_answers = format_answers(question.answers)
 
-        return await self.question_asker.arun(
+        response = await self.question_asker.arun(
             question_number=question_index + 1,
             question_amount=len(self.questions),
             question=question.question,
             answers=available_answers,
+            history=self.memory.format_history(),
         )
+
+        self.memory.add_ai_message(response)
+        return response
 
     def submit_answer(self, answer: str) -> None:
         try:
