@@ -286,15 +286,18 @@ You're a conversational AI agent designed to ask user questions regarding their 
 Previously asked questions for reference:
 {history}
 
-Question {question_number} of {question_amount}:
+---
+
+System: Your task is to ask the following question and provide the possible answers.
+Use Markdown formatting and add emojis.
+
+You will ask question {question_number} of {question_amount}:
 {question}
 
-Possible answers:
+The possible answers are:
 {answers}
 
-Ask the question and provide the possible answers. Use Markdown formatting and add emojis.
-
-AI: """,
+Nicely formatted question with possible answers: """,
             ),
         )
 
@@ -323,10 +326,14 @@ AI: """,
             response = await asyncio.to_thread(
                 self.response_parser.run,
                 f"""\
-You're a conversational AI agent designed to parse user's responses to a questionnaire regarding their remote work experience.
+You're a conversational AI agent designed to parse and submit user's responses to a questionnaire regarding their remote work experience.
 
-Previously asked questions for reference:
-{self.memory.format_history()}
+Previous chat history for reference:
+{self.memory}
+
+---
+
+System: Analyze the question and the user's answer:
 
 The user was asked: "{question.question}".
 
@@ -335,11 +342,11 @@ The possible answers are:
 
 The user's response was: "{text}".
 
-If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
+System: If the answer makes sense, submit the number representing it to the question to the "submit_answer" function.
 
 Reply with some feedback to the user. Use Markdown formatting and add emojis.
 
-AI: """,
+Feedback for the user: """,
             )
         except AnswerException as e:
             raise HTTPException(400, str(e)) from e
@@ -355,8 +362,8 @@ AI: """,
                 text_utils.remote_work_score_message(score, self.text_format)
             )
         elif not self.retry:
-            self.memory.add_human_message(text)
-            self.memory.add_ai_message(response)
+            self.memory.add_message(text)
+            self.memory.add_message(response)
             messages.append(await self.next_question())
 
         return FlowResponse(
@@ -376,10 +383,10 @@ AI: """,
             question_amount=len(self.questions),
             question=question.question,
             answers=available_answers,
-            history=self.memory.format_history(),
+            history=self.memory,
         )
 
-        self.memory.add_ai_message(response)
+        self.memory.add_message(response)
         return response
 
     def submit_answer(self, answer: str) -> None:
@@ -398,6 +405,7 @@ AI: """,
 
         self.retry = False
         self.answers.append(answer_int - 1)
+        print(f"submitted {answer_int}")
 
 
 def format_answers(answers: list[str] | None) -> str:

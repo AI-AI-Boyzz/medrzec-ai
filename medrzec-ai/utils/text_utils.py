@@ -44,22 +44,16 @@ class ChatMemory:
         self.max_size = max_size
         self.memory: list[str] = []
 
-    def _add_message(self, text: str) -> None:
+    def add_message(self, text: str) -> None:
         self.memory.append(text)
         if len(self.memory) > self.max_size:
             self.memory.pop(0)
 
-    def add_human_message(self, text: str) -> None:
-        self._add_message(f"Human: {text}")
-
-    def add_ai_message(self, text: str) -> None:
-        self._add_message(f"AI: {text}")
-
-    def format_history(self) -> str:
+    def __str__(self) -> str:
         if self.memory:
             return "\n\n".join(self.memory)
         else:
-            return "Chat history is empty"
+            return "No chat history yet."
 
 
 def remote_work_score_message(score: int, text_format: TextFormat) -> str:
