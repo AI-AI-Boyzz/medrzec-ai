@@ -9,7 +9,7 @@ class SalesAgentChat(Flow):
     def __init__(self, db: Database, user: User) -> None:
         self.db = db
         self.lastQuestion = None
-        llm = OpenAI()
+        llm = OpenAI(model_name="gpt-4", temperature=0.5)
         self.user = user
         self.agent = Agent(
             stage_analyzer_chain=StageAnalyzerChain.from_llm(llm),
