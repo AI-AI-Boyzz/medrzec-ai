@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 
-from sqlalchemy import create_engine, delete, select
+from sqlalchemy import ForeignKey, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.sql import func
 
 
 class Base(DeclarativeBase):
@@ -11,9 +13,23 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    __tablename__ = "email"
+    __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(unique=True)
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), nullable=False
+    )
+
+
+class RemoteWorkScore(Base):
+    __tablename__ = "remote_work_score"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    score: Mapped[int] = mapped_column(nullable=False)
+    type: Mapped[int] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), nullable=False
+    )
 
 
 class Database:

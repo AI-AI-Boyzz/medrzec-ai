@@ -13,9 +13,8 @@ import sqlalchemy.exc
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from .utils import api_utils
+
 from . import FlowEnum
-from .utils.text_utils import TextFormat
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow, FlowResponse, FlowSuggestion
@@ -23,7 +22,8 @@ from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
 from .flows.remote_work_score import TeamRoles
 from .flows.remote_work_score_and_playbook import RemoteWorkScoreAndPlaybookChat
 from .flows.remote_work_score_intro import RemoteWorkScoreIntroChat
-from .utils.text_utils import EmojiReplacer
+from .utils import api_utils
+from .utils.text_utils import EmojiReplacer, TextFormat
 
 dotenv.load_dotenv()
 
@@ -173,8 +173,8 @@ async def new_user(request: ModifyUser):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
 
-    with contextlib.suppress(sqlalchemy.exc.IntegrityError):
-        db.add_user(User(email=request.email))
+    # with contextlib.suppress(sqlalchemy.exc.IntegrityError):
+    db.add_user(User(email=request.email))
 
 
 @app.delete("/users", response_class=Response)
