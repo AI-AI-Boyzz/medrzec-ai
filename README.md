@@ -19,10 +19,16 @@ Install dependencies
 pip install -U -r requirements.txt
 ```
 
+Run database migrations
+
+```
+alembic upgrade head
+```
+
 Run the project
 
 ```
-uvicorn medrzec-ai.__main__:app
+uvicorn medrzec_ai.__main__:app
 ```
 
 You may want to update the Pinecone database
