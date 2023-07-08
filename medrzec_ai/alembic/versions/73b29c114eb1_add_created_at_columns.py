@@ -15,9 +15,23 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("user", sa.Column("created_at", sa.DateTime(), nullable=False))
     op.add_column(
-        "remote_work_score", sa.Column("created_at", sa.DateTime(), nullable=False)
+        "user",
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.sql.func.now(),
+            nullable=False,
+        ),
+    )
+    op.add_column(
+        "remote_work_score",
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.sql.func.now(),
+            nullable=False,
+        ),
     )
 
 
