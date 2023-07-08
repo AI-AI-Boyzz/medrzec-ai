@@ -1,12 +1,12 @@
 from langchain import OpenAI
 from medrzec_ai.agents.sales.agent import Agent, StageAnalyzerChain, ConversationChain
-from medrzec_ai.database import Database
+# from medrzec_ai.database import Database
 from .flow import Flow, FlowResponse
 
 
 class SalesAgentChat(Flow):
     def __init__(self) -> None:
-        llm = OpenAI()
+        llm = OpenAI(model_name="gpt-4", temperature=0.5)
         self.agent = Agent(
             stage_analyzer_chain=StageAnalyzerChain.from_llm(llm),
             conversation_chain=ConversationChain.from_llm(llm),

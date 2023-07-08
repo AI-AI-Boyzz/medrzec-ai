@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Any
 from dataclasses import dataclass, field
 from langchain import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
+from langchain.schema import BaseLLMOutputParser, Generation
+import re
 
 from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT, CONVERSATION_STAGES
 
@@ -22,23 +23,25 @@ class Agent:
             self.stage_analyzer_chain(
                 {
                     "conversation_history": "\n".join(self.conversation_history),
-                    "conversation_stages": "\n".join(
-                        f"{i}: {stage.title}: {stage.prompt}"
+                    "conversation_stages": "\n-------\n".join(
+                        f"{i}: {stage.title}:\n{stage.prompt}"
                         for i, stage in enumerate(CONVERSATION_STAGES)
                     ),
-                    "conversation_stage_id": self.current_stage,
+                    "conversation_stage_id": self.current_stage or "(none)",
                 }
             )["text"]
         )
+
         current_conversation_stage = CONVERSATION_STAGES[self.current_stage]
 
         ai_message = self.conversation_chain(
             {
-                "current_conversation_stage": f"{current_conversation_stage.title}: {current_conversation_stage.prompt}",
+                "current_conversation_stage": f"{current_conversation_stage.title}\n{current_conversation_stage.prompt}\n---",
                 "conversation_history": "\n".join(self.conversation_history),
             }
         )["text"]
         self.conversation_history.append(f"AI: {ai_message}")
+
         return ai_message
 
 
@@ -53,7 +56,7 @@ class StageAnalyzerChain(LLMChain):
                 "conversation_stage_id",
             ],
         )
-        return cls(prompt=prompt, llm=llm, verbose=verbose)
+        return cls(prompt=prompt, llm=llm, verbose=verbose, output_parser=StageAnalyzerOutputParser())
 
 
 class ConversationChain(LLMChain):
@@ -64,3 +67,9 @@ class ConversationChain(LLMChain):
             input_variables=["current_conversation_stage", "conversation_history"],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
+
+
+class StageAnalyzerOutputParser(BaseLLMOutputParser[int]):
+    def parse_result(self, result: list[Generation]) -> int:
+        index = int(re.search(r'\d+', result[0].text).group())
+        return min(index, len(CONVERSATION_STAGES) - 1)
