@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import Any
 from dataclasses import dataclass, field
 from langchain import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 
-from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT, CONVERSATION_STAGES
+from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT
+from .data import CONVERSATION_STAGES
 
 
 @dataclass
@@ -61,6 +61,9 @@ class ConversationChain(LLMChain):
     def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
         prompt = PromptTemplate(
             template=CONVERSATION_PROMPT,
-            input_variables=["current_conversation_stage", "conversation_history"],
+            input_variables=[
+                "current_conversation_stage",
+                "conversation_history",
+            ],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
