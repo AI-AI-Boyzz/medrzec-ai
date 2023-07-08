@@ -1,10 +1,20 @@
 from dataclasses import dataclass
+from enum import Enum, auto
+
+
+class InterviewTopic(Enum):
+    ORGANIZATION = auto()
+    COMMUNICATION = auto()
+    LEADERSHIP = auto()
+    CULTURE_AND_VALUES = auto()
+    WELLBEING = auto()
 
 
 @dataclass
 class ConversationStage:
     title: str
     prompt: str
+    topic: InterviewTopic | None
 
 
 CONVERSATION_STAGES = [
