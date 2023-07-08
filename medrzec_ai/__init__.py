@@ -10,6 +10,7 @@ class FlowEnum(StrEnum):
     REMOTE_WORK_SCORE_INTRO = auto()
     REMOTE_WORK_SCORE_TEAM_MEMBER = auto()
     REMOTE_WORK_SCORE_PEOPLE_LEADER = auto()
+    INTERVIEW_FLOW = auto()
     AWESOME = auto()
 
     def as_suggestion(self) -> FlowSuggestion:
@@ -24,6 +25,8 @@ class FlowEnum(StrEnum):
                 text = "I'm a team leader!"
             case FlowEnum.AWESOME:
                 text = "Tell me how awesome I am"
+            case FlowEnum.INTERVIEW_FLOW:
+                text = "Begin interview"
 
         return FlowSuggestion(id=self, text=text)
 

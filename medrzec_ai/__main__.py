@@ -14,6 +14,8 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
+
 from . import FlowEnum
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
@@ -72,6 +74,8 @@ async def start_chat(
             chat = RemoteWorkScoreAndPlaybookChat(TeamRoles.PEOPLE_LEADER, text_format)
         case FlowEnum.AWESOME:
             chat = AwesomeChat()
+        case FlowEnum.INTERVIEW_FLOW:
+            chat = SalesAgentChat()
 
     chat_id = uuid4().hex
     response = await chat.start_conversation()
@@ -113,6 +117,7 @@ async def flow_suggestions():
         flow_suggestions=[
             FlowEnum.REMOTE_WORK_SCORE_INTRO.as_suggestion(),
             FlowEnum.QUESTIONS_AND_PLAYBOOK.as_suggestion(),
+            FlowEnum.INTERVIEW_FLOW.as_suggestion(),
         ]
     )
 

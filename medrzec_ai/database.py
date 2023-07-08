@@ -32,6 +32,16 @@ class RemoteWorkScore(Base):
     )
 
 
+class Answer(Base):
+    __tablename__ = "answer"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    text: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), nullable=False
+    )
+
+
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(os.environ["DATABASE_PATH"])
@@ -49,3 +59,8 @@ class Database:
     def delete_user(self, email: str):
         with Session(self.engine) as session:
             session.execute(delete(User).where(User.email == email))
+
+    def add_answer(self, answer: Answer):
+        with Session(self.engine) as session:
+            session.add(answer)
+            session.commit()
