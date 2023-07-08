@@ -61,7 +61,9 @@ class ModifyUser(BaseModel):
 
 
 async def start_chat(
-    flow: FlowEnum, text_format: TextFormat
+    flow: FlowEnum,
+    text_format: TextFormat,
+    user: User,
 ) -> tuple[str, FlowResponse]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
@@ -75,7 +77,7 @@ async def start_chat(
         case FlowEnum.AWESOME:
             chat = AwesomeChat()
         case FlowEnum.INTERVIEW_FLOW:
-            chat = SalesAgentChat()
+            chat = SalesAgentChat(db, user)
 
     chat_id = uuid4().hex
     response = await chat.start_conversation()
@@ -147,7 +149,7 @@ async def start_conversation(
     else:
         raise HTTPException(401, "Missing credentials.")
 
-    (chat_id, response) = await start_chat(flow, text_format)
+    (chat_id, response) = await start_chat(flow, text_format, user)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),

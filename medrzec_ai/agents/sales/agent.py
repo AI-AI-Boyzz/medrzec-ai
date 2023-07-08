@@ -6,7 +6,8 @@ from langchain.llms import BaseLLM
 from langchain.schema import BaseLLMOutputParser, Generation
 import re
 
-from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT, CONVERSATION_STAGES
+from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT
+from .data import CONVERSATION_STAGES
 
 
 @dataclass
@@ -64,7 +65,10 @@ class ConversationChain(LLMChain):
     def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
         prompt = PromptTemplate(
             template=CONVERSATION_PROMPT,
-            input_variables=["current_conversation_stage", "conversation_history"],
+            input_variables=[
+                "current_conversation_stage",
+                "conversation_history",
+            ],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
 
