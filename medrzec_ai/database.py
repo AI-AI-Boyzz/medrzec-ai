@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from typing import Sequence
 
 from sqlalchemy import ForeignKey, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
@@ -47,7 +48,6 @@ class Purchase(Base):
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(os.environ["DATABASE_PATH"])
-        Base.metadata.create_all(self.engine)
 
     def add_user(self, user: User):
         with Session(self.engine) as session:
@@ -61,12 +61,14 @@ class Database:
     def delete_user(self, email: str):
         with Session(self.engine) as session:
             session.execute(delete(User).where(User.email == email))
-    
+
     def add_purchase(self, user_id: int):
         with Session(self.engine) as session:
             session.add(Purchase(user_id=user_id))
             session.commit()
 
-    def get_purchases(self, user_id: int) -> list[Purchase]:
+    def get_purchases(self, user_id: int) -> Sequence[Purchase]:
         with Session(self.engine) as session:
-            return session.scalars(select(Purchase).where(Purchase.user_id == user_id)).all()
+            return session.scalars(
+                select(Purchase).where(Purchase.user_id == user_id)
+            ).all()

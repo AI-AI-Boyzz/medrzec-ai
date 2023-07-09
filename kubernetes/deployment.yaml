@@ -91,3 +91,8 @@ spec:
                 secretKeyRef:
                   name: api
                   key: STRIPE_WEBHOOK_SECRET
+            - name: STRIPE_REDIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: STRIPE_REDIRECT_URL
