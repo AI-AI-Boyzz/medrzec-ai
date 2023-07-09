@@ -9,6 +9,8 @@ import re
 from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT
 from .data import CONVERSATION_STAGES
 
+MESSAGES_HARD_LIMIT = 100
+
 
 @dataclass
 class Agent:
@@ -20,18 +22,21 @@ class Agent:
     def step(self, user_message: str) -> str:
         self.conversation_history.append(f"User: {user_message}")
 
-        self.current_stage = int(
-            self.stage_analyzer_chain(
-                {
-                    "conversation_history": "\n".join(self.conversation_history),
-                    "conversation_stages": "\n-------\n".join(
-                        f"{i}: {stage.title}:\n{stage.prompt}"
-                        for i, stage in enumerate(CONVERSATION_STAGES)
-                    ),
-                    "conversation_stage_id": self.current_stage or "(none)",
-                }
-            )["text"]
-        )
+        if len(self.conversation_history) >= MESSAGES_HARD_LIMIT:
+            self.current_stage = len(CONVERSATION_STAGES) - 1
+        else:
+            self.current_stage = int(
+                self.stage_analyzer_chain(
+                    {
+                        "conversation_history": "\n".join(self.conversation_history),
+                        "conversation_stages": "\n-------\n".join(
+                            f"{i}: {stage.title}:\n{stage.prompt}"
+                            for i, stage in enumerate(CONVERSATION_STAGES)
+                        ),
+                        "conversation_stage_id": self.current_stage or "(none)",
+                    }
+                )["text"]
+            )
 
         current_conversation_stage = CONVERSATION_STAGES[self.current_stage]
 
@@ -57,7 +62,12 @@ class StageAnalyzerChain(LLMChain):
                 "conversation_stage_id",
             ],
         )
-        return cls(prompt=prompt, llm=llm, verbose=verbose, output_parser=StageAnalyzerOutputParser())
+        return cls(
+            prompt=prompt,
+            llm=llm,
+            verbose=verbose,
+            output_parser=StageAnalyzerOutputParser(),
+        )
 
 
 class ConversationChain(LLMChain):
@@ -75,5 +85,5 @@ class ConversationChain(LLMChain):
 
 class StageAnalyzerOutputParser(BaseLLMOutputParser[int]):
     def parse_result(self, result: list[Generation]) -> int:
-        index = int(re.search(r'\d+', result[0].text).group())
+        index = int(re.search(r"\d+", result[0].text).group())
         return min(index, len(CONVERSATION_STAGES) - 1)
