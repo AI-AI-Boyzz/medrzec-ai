@@ -35,6 +35,15 @@ class RemoteWorkScore(Base):
     )
 
 
+class Purchase(Base):
+    __tablename__ = "purchase"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), nullable=False
+    )
+
+
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(os.environ["DATABASE_PATH"])
@@ -52,3 +61,12 @@ class Database:
     def delete_user(self, email: str):
         with Session(self.engine) as session:
             session.execute(delete(User).where(User.email == email))
+    
+    def add_purchase(self, user_id: int):
+        with Session(self.engine) as session:
+            session.add(Purchase(user_id=user_id))
+            session.commit()
+
+    def get_purchases(self, user_id: int) -> list[Purchase]:
+        with Session(self.engine) as session:
+            return session.scalars(select(Purchase).where(Purchase.user_id == user_id)).all()

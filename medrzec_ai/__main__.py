@@ -4,18 +4,21 @@ import contextlib
 import hmac
 import os
 import secrets
+import stripe
 from asyncio import Lock
 from uuid import uuid4
+from typing import Annotated
 
 import dotenv
 import httpx
 import sqlalchemy.exc
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Header 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from . import FlowEnum
-from .database import Database, User
+from .database import Database, User, Purchase
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow, FlowResponse, FlowSuggestion
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
@@ -32,6 +35,7 @@ active_conversations: dict[str, tuple[Flow, Lock]] = {}
 db = Database()
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
+stripe.api_key = os.environ["STRIPE_API_KEY"]
 client = httpx.AsyncClient()
 emoji_replacer = EmojiReplacer()
 
@@ -46,6 +50,7 @@ class StartChatResponse(BaseModel):
     chat_id: str
     message: str
     flow_suggestions: list[FlowSuggestion] | None
+    is_paid: bool
 
 
 class SendMessageResponse(BaseModel):
@@ -64,6 +69,11 @@ class AddUserRequest(BaseModel):
 class DeleteUserRequest(BaseModel):
     api_key: str
     email: str
+
+
+class StripeWebhookRequest(BaseModel):
+    type: str
+    data: dict[str, str]
 
 
 async def start_chat(
@@ -149,12 +159,15 @@ async def start_conversation(
 
     else:
         raise HTTPException(401, "Missing credentials.")
+    
+    purchases = db.get_purchases(user.id)
 
     (chat_id, response) = await start_chat(flow, text_format)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),
         flow_suggestions=response.flow_suggestions,
+        is_paid=bool(purchases),
     )
 
 
@@ -199,6 +212,44 @@ async def delete_user(request: DeleteUserRequest):
 
     with contextlib.suppress(sqlalchemy.exc.IntegrityError):
         db.delete_user(request.email)
+
+
+@app.get("/checkout-session")
+async def create_checkout(user_token: str) -> str:
+    token = (await fetch_token(user_token))
+    email = token["email"]
+    print(email)
+
+    checkout_session = stripe.checkout.Session.create(
+    line_items=[
+        {
+            'price': "remote-how-ai",
+            'quantity': 1,
+        },
+    ],
+    mode='payment',
+    success_url='http://localhost:8000',
+    cancel_url='http://localhost:8000/cancel',
+    customer_email=email,
+    )
+    print(checkout_session.url)
+    return checkout_session.url
+
+
+@app.post("/stripe-webhooks")
+async def stripe_webhook(request: Request, stripe_signature: Annotated[str, Header()]):
+    try:
+        event = stripe.Webhook.construct_event(await request.body(), stripe_signature, os.environ["STRIPE_WEBHOOK_SECRET"])
+        print(event.data)
+        user = db.get_user(event.data.object.receipt_email)
+        if user is None:
+            raise HTTPException(404, "User not found.")
+    except stripe.error.SignatureVerificationError as e:
+        raise HTTPException(400, "Invalid signature.") from e
+
+    db.add_purchase(user.id) 
+
+    return Response(status_code=204)
 
 
 @app.get("/slack")
