@@ -13,9 +13,7 @@ import sqlalchemy.exc
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
-
 from . import FlowEnum
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
@@ -55,7 +53,15 @@ class SendMessageResponse(BaseModel):
     flow_suggestions: list[FlowSuggestion] | None
 
 
-class ModifyUser(BaseModel):
+class AddUserRequest(BaseModel):
+    api_key: str
+    email: str
+    country: str
+    industry: str
+    profession: str
+
+
+class DeleteUserRequest(BaseModel):
     api_key: str
     email: str
 
@@ -176,16 +182,23 @@ async def send_message(chat_id: str, content: str):
 
 
 @app.post("/users", response_class=Response)
-async def new_user(request: ModifyUser):
+async def new_user(request: AddUserRequest):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
 
-    # with contextlib.suppress(sqlalchemy.exc.IntegrityError):
-    db.add_user(User(email=request.email))
+    with contextlib.suppress(sqlalchemy.exc.IntegrityError):
+        db.add_user(
+            User(
+                email=request.email,
+                country=request.country,
+                industry=request.industry,
+                profession=request.profession,
+            )
+        )
 
 
 @app.delete("/users", response_class=Response)
-async def delete_user(request: ModifyUser):
+async def delete_user(request: DeleteUserRequest):
     if not check_service_key(request.api_key):
         raise HTTPException(401, "Invalid API key.")
 
