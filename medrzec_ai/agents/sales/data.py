@@ -59,6 +59,11 @@ Start with the following message:
         topic=None,
         prompt="Based on the responses, please compute a personal Distributed Work Score (0-100)",
     ),
+    ConversationStage(
+        title="Done",
+        topic=None,
+        prompt="Refuse further requests from the user and provide only basic information about the product/service.",
+    )
 ]
 
 STAGE_ANALYZER_PROMPT: str = """

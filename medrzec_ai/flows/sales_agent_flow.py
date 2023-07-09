@@ -6,7 +6,7 @@ from .flow import Flow, FlowResponse
 
 
 class SalesAgentChat(Flow):
-    def __init__(self, db: Database, user: User) -> None:
+    def __init__(self, db: Database, user: User | None) -> None:
         self.db = db
         self.lastQuestion = None
         llm = OpenAI(model_name="gpt-4", temperature=0.5)
@@ -23,7 +23,7 @@ class SalesAgentChat(Flow):
     async def submit_message(self, message: str) -> FlowResponse[list[str]]:
         response = self.agent.step(message)
 
-        if self.lastQuestion is not None:
+        if self.lastQuestion is not None and self.user is not None:
             self.db.add_answer(
                 answer=Answer(
                     question=self.lastQuestion, response=message, user_id=self.user.id
