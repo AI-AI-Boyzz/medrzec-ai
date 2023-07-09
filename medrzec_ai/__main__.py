@@ -214,25 +214,22 @@ async def delete_user(request: DeleteUserRequest):
         db.delete_user(request.email)
 
 
-@app.get("/checkout-session")
+@app.post("/checkout-session")
 async def create_checkout(user_token: str) -> str:
     token = (await fetch_token(user_token))
     email = token["email"]
-    print(email)
 
     checkout_session = stripe.checkout.Session.create(
     line_items=[
         {
-            'price': "remote-how-ai",
+            'price': "remote-how-ai-production",
             'quantity': 1,
         },
     ],
     mode='payment',
-    success_url='http://localhost:8000',
-    cancel_url='http://localhost:8000/cancel',
+    success_url=os.environ["STRIPE_REDIRECT_URL"],
     customer_email=email,
     )
-    print(checkout_session.url)
     return checkout_session.url
 
 
@@ -240,8 +237,7 @@ async def create_checkout(user_token: str) -> str:
 async def stripe_webhook(request: Request, stripe_signature: Annotated[str, Header()]):
     try:
         event = stripe.Webhook.construct_event(await request.body(), stripe_signature, os.environ["STRIPE_WEBHOOK_SECRET"])
-        print(event.data)
-        user = db.get_user(event.data.object.receipt_email)
+        user = db.get_user(event.data.object.customer_details.email)
         if user is None:
             raise HTTPException(404, "User not found.")
     except stripe.error.SignatureVerificationError as e:
