@@ -7,6 +7,8 @@ from sqlalchemy import ForeignKey, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.sql import func
 
+from medrzec_ai.agents.sales.data import InterviewTopic
+
 
 class Base(DeclarativeBase):
     pass
@@ -38,7 +40,8 @@ class Answer(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     question: Mapped[str] = mapped_column(nullable=False)
     response: Mapped[str] = mapped_column(nullable=False)
-    topic: Mapped[str] = mapped_column(nullable=False)
+    topic: Mapped[InterviewTopic] = mapped_column(nullable=False)
+    score: Mapped[float] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )

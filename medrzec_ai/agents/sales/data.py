@@ -20,6 +20,7 @@ class ConversationStage:
 CONVERSATION_STAGES = [
     ConversationStage(
         title="Introduction",
+        topic=None,
         prompt="""Start the conversation with the user by introducing yourself and your company.
 Be polite and respectful while keeping the tone of the conversation professional. Your greeting should be welcoming.
 Please welcome the user with the message and add emojis.
@@ -33,6 +34,7 @@ Are you ready?!""",
     ),
     ConversationStage(
         title="Qualification",
+        topic=InterviewTopic.ORGANIZATION,
         prompt="""Start the free assessment
 
 You want to calculate the user's Distributed Work Score. Based on their answers, provide them with a very insightful,
@@ -54,6 +56,7 @@ Start with the following message:
     ),
     ConversationStage(
         title="Score generation",
+        topic=None,
         prompt="Based on the responses, please compute a personal Distributed Work Score (0-100)",
     ),
 ]
