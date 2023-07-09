@@ -43,8 +43,9 @@ class Answer(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     question: Mapped[str] = mapped_column(nullable=False)
     response: Mapped[str] = mapped_column(nullable=False)
-    topic: Mapped[InterviewTopic] = mapped_column(nullable=False)
+    topic: Mapped[InterviewTopic] = mapped_column(nullable=True)
     score: Mapped[float] = mapped_column(nullable=False)
+    magnitude: Mapped[float] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )

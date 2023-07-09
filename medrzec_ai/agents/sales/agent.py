@@ -48,12 +48,14 @@ class Agent:
         )["text"]
         self.conversation_history.append(f"AI: {ai_message}")
 
+        print(f"Current stage: {self.current_stage}")
+
         return ai_message
 
 
 class StageAnalyzerChain(LLMChain):
     @classmethod
-    def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
+    def from_llm(cls, llm: BaseLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(
             template=STAGE_ANALYZER_PROMPT,
             input_variables=[
@@ -72,7 +74,7 @@ class StageAnalyzerChain(LLMChain):
 
 class ConversationChain(LLMChain):
     @classmethod
-    def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
+    def from_llm(cls, llm: BaseLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(
             template=CONVERSATION_PROMPT,
             input_variables=[
@@ -80,7 +82,11 @@ class ConversationChain(LLMChain):
                 "conversation_history",
             ],
         )
-        return cls(prompt=prompt, llm=llm, verbose=verbose)
+        return cls(
+            prompt=prompt,
+            llm=llm,
+            verbose=verbose,
+        )
 
 
 class StageAnalyzerOutputParser(BaseLLMOutputParser[int]):
