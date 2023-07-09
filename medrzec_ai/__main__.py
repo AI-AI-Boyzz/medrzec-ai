@@ -141,7 +141,7 @@ async def start_conversation(
         token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
 
-        if user is None:
+        if not os.getenv("ALLOW_ALL_EMAILS") in ("true", "1") and user is None:
             raise HTTPException(
                 401,
                 "Your email is not approved yet. "
