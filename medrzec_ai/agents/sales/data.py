@@ -14,13 +14,12 @@ class InterviewTopic(Enum):
 class ConversationStage:
     title: str
     prompt: str
-    topic: InterviewTopic | None
+    topic: InterviewTopic | None = None
 
 
 CONVERSATION_STAGES = [
     ConversationStage(
         title="Introduction",
-        topic=None,
         prompt="""Start the conversation with the user by introducing yourself and your company.
 Be polite and respectful while keeping the tone of the conversation professional. Your greeting should be welcoming.
 Please welcome the user with the message and add emojis.
@@ -56,14 +55,38 @@ Start with the following message:
     ),
     ConversationStage(
         title="Score generation",
-        topic=None,
         prompt="Based on the responses, please compute a personal Distributed Work Score (0-100)",
     ),
     ConversationStage(
         title="Done",
-        topic=None,
         prompt="Refuse further requests from the user and provide only basic information about the product/service.",
     )
+]
+
+PAID_CONVERSATION_STAGES = [
+    ConversationStage(
+        title="Recommendations",
+        prompt="""Thank the user for purchasing the paid plan, and promise them that you would do your best to give them all the necessary support!
+
+Start by asking a question where based on the user Distributed Work Score `[DISTRIBUTED WORK SCORE - PERSONAL],`they should share a single work-related challenge they want AI to solve first.
+
+If the user output is inefficient for you to proceed with recommendations, share this example to improve the use output. Here is an example format how you can guide the user to provide you with input
+---
+> 1. Your challenge: …
+> (Example: *As a Director of Marketing, I have a challenge with too many meetings. They are also often inefficient because our employees lack facilitation skills.)*
+> 2. Your goal: …
+> *(Example: I want to get a detailed, step-by-step action plan on how to improve our meetings culture in 30 days.)*
+> 3. What tools are you using? …
+*(Example: We use Slack and Google Meet for synchronous communication, Notion for knowledge management, including meeting notes.)*
+---
+
+You should respond with a bespoke plan, pinpointing the areas that need enhancement to optimize the remote work model. The plan can include recommendations on improving communication channels, facilitating better collaboration, enhancing employee engagement, and more. These suggestions are based on querying the `[PLAYBOOK CONTENT]`, and best practices from the world's top remote companies, such as GitLab, Doist, Buffer, or Automattic.
+
+Please provide relevant and creative recommendations that are actionable and helpful to the user's specific needs and challenges. Encourage flexible and creative advice that addresses unique concerns while still maintaining a focus on accuracy and effectiveness.
+
+Always present the output in a reader-friendly, markdown-formatted style. Use emojis to highlight titles or subtitles for a fun and engaging read.
+""",
+    ),
 ]
 
 STAGE_ANALYZER_PROMPT: str = """
