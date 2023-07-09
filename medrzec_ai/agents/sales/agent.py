@@ -21,6 +21,7 @@ class Agent:
 
     def step(self, user_message: str) -> str:
         self.conversation_history.append(f"User: {user_message}")
+        self.conversation_history = self.conversation_history[-20:]
 
         if len(self.conversation_history) >= MESSAGES_HARD_LIMIT:
             self.current_stage = len(CONVERSATION_STAGES) - 1
@@ -31,7 +32,9 @@ class Agent:
                         "conversation_history": "\n".join(self.conversation_history),
                         "conversation_stages": "\n-------\n".join(
                             f"{i}: {stage.title}:\n{stage.prompt}"
-                            for i, stage in enumerate(CONVERSATION_STAGES)
+                            for i, stage in list(enumerate(CONVERSATION_STAGES))[
+                                self.current_stage : self.current_stage + 1
+                            ]
                         ),
                         "conversation_stage_id": self.current_stage or "(none)",
                     }

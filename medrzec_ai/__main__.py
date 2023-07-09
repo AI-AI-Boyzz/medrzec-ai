@@ -123,8 +123,6 @@ async def index():
 async def flow_suggestions():
     return FlowSuggestionsResponse(
         flow_suggestions=[
-            FlowEnum.REMOTE_WORK_SCORE_INTRO.as_suggestion(),
-            FlowEnum.QUESTIONS_AND_PLAYBOOK.as_suggestion(),
             FlowEnum.INTERVIEW_FLOW.as_suggestion(),
         ]
     )

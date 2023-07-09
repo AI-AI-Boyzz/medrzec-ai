@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import ForeignKey, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
@@ -73,3 +74,70 @@ class Database:
         with Session(self.engine) as session:
             session.add(answer)
             session.commit()
+
+    def get_score(self, user: User) -> int:
+        with Session(self.engine) as session:
+            elo = session.scalars(
+                select(Answer)
+                .where(Answer.user_id == user.id)
+                .where(Answer.topic is not None)
+                .group_by(Answer.topic)
+            ).all()
+
+            organization = [x for x in elo if x.topic == InterviewTopic.ORGANIZATION]
+            comunication = [x for x in elo if x.topic == InterviewTopic.COMMUNICATION]
+            leadership = [x for x in elo if x.topic == InterviewTopic.LEADERSHIP]
+            culture = [x for x in elo if x.topic == InterviewTopic.CULTURE_AND_VALUES]
+            welbeing = [x for x in elo if x.topic == InterviewTopic.WELLBEING]
+
+            organizationScore = sum(
+                map(lambda x: points_from_score(x.score), organization)
+            ) / ((len(organization)) * 5)
+
+            comunicationScore = sum(
+                map(lambda x: points_from_score(x.score), comunication)
+            ) / ((len(comunication)) * 5)
+
+            leadershipScore = sum(
+                map(lambda x: points_from_score(x.score), leadership)
+            ) / ((len(leadership)) * 5)
+
+            if (len(welbeing)) == 0:
+                welbeingScore = 0
+            else:
+                welbeingScore = sum(
+                    map(lambda x: points_from_score(x.score), welbeing)
+                ) / ((len(welbeing)) * 5)
+
+            if len(culture) == 0:
+                cultureScore = 0
+            else:
+                cultureScore = sum(
+                    map(lambda x: points_from_score(x.score), cultureScore)
+                ) / ((len(culture)) * 5)
+
+            score = (
+                (
+                    organizationScore
+                    + comunicationScore
+                    + leadershipScore
+                    + welbeingScore
+                    + cultureScore
+                )
+                / 5
+                * 100
+            )
+
+            return int(score)
+
+
+def points_from_score(score: float):
+    if score < -0.6:
+        return 1
+    if score < -0.2:
+        return 2
+    if score < 0.2:
+        return 3
+    if score < 0.6:
+        return 4
+    return 5
