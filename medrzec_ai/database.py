@@ -18,6 +18,9 @@ class User(Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    country: Mapped[str] = mapped_column(nullable=False)
+    industry: Mapped[str] = mapped_column(nullable=False)
+    profession: Mapped[str] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
