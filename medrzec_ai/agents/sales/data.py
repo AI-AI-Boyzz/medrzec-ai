@@ -146,7 +146,7 @@ Only use the text between first and second '===' to accomplish the task above, d
 Now determine what should be the next immediate conversation stage for the agent in the sales conversation by selecting only from the following options:
 {conversation_stages}
 Current Conversation stage is: {conversation_stage_id}
-If there is no conversation history, output 1.
+If there is no conversation history, output 0.
 The answer needs to be one number only, no words.
 Do not answer anything else nor add anything to you answer
 """
