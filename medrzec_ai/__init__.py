@@ -26,7 +26,7 @@ class FlowEnum(StrEnum):
             case FlowEnum.AWESOME:
                 text = "Tell me how awesome I am"
             case FlowEnum.INTERVIEW_FLOW:
-                text = "Begin interview"
+                text = "Get my Distributed Work Score"
 
         return FlowSuggestion(id=self, text=text)
 

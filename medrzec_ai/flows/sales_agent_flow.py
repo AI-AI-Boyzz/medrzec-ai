@@ -2,8 +2,7 @@ from langchain import OpenAI
 
 from medrzec_ai.agents.sales.agent import Agent, ConversationChain, StageAnalyzerChain
 from medrzec_ai.agents.sales.data import CONVERSATION_STAGES, PAID_CONVERSATION_STAGES
-from medrzec_ai.apis.sentiment import analyze_sentiment
-from medrzec_ai.database import Answer, Database, User
+from medrzec_ai.database import Database, User
 
 from .flow import Flow, FlowResponse
 
@@ -31,20 +30,20 @@ class SalesAgentChat(Flow):
             )
 
         response = self.agent.step(message)
-        current_stage = self.conversation_stages[self.agent.current_stage]
+        # current_stage = self.conversation_stages[self.agent.current_stage]
 
-        if self.lastQuestion is not None and self.user is not None:
-            (score, magnitude) = analyze_sentiment(message)
-            self.db.add_answer(
-                answer=Answer(
-                    question=self.lastQuestion,
-                    response=message,
-                    user_id=self.user.id,
-                    topic=current_stage.topic,
-                    score=score,
-                    magnitude=magnitude,
-                ),
-            )
+        # if self.lastQuestion is not None and self.user is not None:
+        #     (score, magnitude) = analyze_sentiment(message)
+        #     self.db.add_answer(
+        #         answer=Answer(
+        #             question=self.lastQuestion,
+        #             response=message,
+        #             user_id=self.user.id,
+        #             topic=current_stage.topic,
+        #             score=score,
+        #             magnitude=magnitude,
+        #         ),
+        #     )
 
         self.lastQuestion = response
         return FlowResponse([response])
