@@ -34,33 +34,38 @@ Are you ready?!""",
     ConversationStage(
         title="Organization",
         topic=InterviewTopic.ORGANIZATION,
-        prompt="""
-"After the user has provided sufficient details about their organization's structure, or if they express a desire to move on, transition to the topic of Communication. Ask about the effectiveness of communication within the user's team."
-""",
+        prompt="After the user has provided sufficient details about their organization's structure (that means answering at least 3 different questions from that field), or if they express a desire to move on, transition to the topic of Communication. Ask about the effectiveness of communication within the user's team.",
     ),
     ConversationStage(
         title="Communication",
         topic=InterviewTopic.COMMUNICATION,
-        prompt="When the user has given enough information about communication practices or expresses readiness to switch topics, shift the conversation from Communication to Leadership. Inquire about the leadership style within the user's organization.",
+        prompt="When the user has given enough information about communication practices (that means answering at least 3 different questions from that field) or expresses readiness to switch topics, shift the conversation from Communication to Leadership. Inquire about the leadership style within the user's organization.",
     ),
     ConversationStage(
         title="Leadership",
         topic=InterviewTopic.LEADERSHIP,
-        prompt="Once the user has described their experience with leadership or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
+        prompt="Once the user has described their experience with leadership (that means answering at least 3 different questions from that field) or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
     ),
     ConversationStage(
         title="Culture and Values",
         topic=InterviewTopic.CULTURE_AND_VALUES,
-        prompt="Once the user has described their experience with leadership or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
+        prompt="Once the user has described their experience with leadership (that means answering at least 3 different questions from that field) or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
     ),
     ConversationStage(
         title="Culture and Values",
         topic=InterviewTopic.CULTURE_AND_VALUES,
-        prompt="After the user has detailed their organization's culture and values, or shows readiness to proceed, transition from discussing Culture and Values to the topic of Wellbeing. Ask how the user's organization promotes the wellbeing of its employees.",
+        prompt="After the user has detailed their organization's culture and values (that means answering at least 3 different questions from that field), or shows readiness to proceed, transition from discussing Culture and Values to the topic of Wellbeing. Ask how the user's organization promotes the wellbeing of its employees.",
     ),
     ConversationStage(
         title="Score generation",
-        prompt="Based on the responses, please compute a personal Distributed Work Score (0-100)",
+        prompt="""
+Based on the user reponse calculate thier remote work score (0 - 100) and present it in the format of <USER-SCORE>/100 
+Encourage the user to donate to the Remote-First Institute if they want to get more in-depth results, and personalized recommendations. Make sure you ask a apealing question to get the user attention - leverage the context data you have.
+
+Make sure that the text is using the markdown language to make it pretty and use emotes to decorate it.
+
+After displaying the score and the related info, please transition to the done stage.
+""",
     ),
     ConversationStage(
         title="Done",
