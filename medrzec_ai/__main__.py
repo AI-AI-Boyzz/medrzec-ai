@@ -17,7 +17,9 @@ from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+
 from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
+
 from . import FlowEnum
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
@@ -150,7 +152,7 @@ async def start_conversation(
         token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
 
-        if not os.getenv("ALLOW_ALL_EMAILS") in ("true", "1") and user is None:
+        if os.getenv("ALLOW_ALL_EMAILS") not in ("true", "1") and user is None:
             raise HTTPException(
                 401,
                 "Your email is not approved yet. "

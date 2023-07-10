@@ -1,13 +1,14 @@
 from __future__ import annotations
+
+import re
 from dataclasses import dataclass, field
+
 from langchain import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 from langchain.schema import BaseLLMOutputParser, Generation
-import re
 
-from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT
-from .data import CONVERSATION_STAGES
+from .data import CONVERSATION_PROMPT, CONVERSATION_STAGES, STAGE_ANALYZER_PROMPT
 
 MESSAGES_HARD_LIMIT = 100
 
