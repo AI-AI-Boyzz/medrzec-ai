@@ -80,9 +80,7 @@ class StripeWebhookRequest(BaseModel):
 
 
 async def start_chat(
-    flow: FlowEnum,
-    text_format: TextFormat,
-    user: User,
+    flow: FlowEnum, text_format: TextFormat, user: User | None, user_token: str
 ) -> tuple[str, FlowResponse]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
@@ -96,7 +94,7 @@ async def start_chat(
         case FlowEnum.AWESOME:
             chat = AwesomeChat()
         case FlowEnum.INTERVIEW_FLOW:
-            chat = SalesAgentChat(db, user)
+            chat = SalesAgentChat(db, user, user_token)
 
     chat_id = uuid4().hex
     response = await chat.start_conversation()
@@ -151,6 +149,7 @@ async def start_conversation(
     if id_token is not None:
         token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
+        api_key = None
 
         if os.getenv("ALLOW_ALL_EMAILS") not in ("true", "1") and user is None:
             raise HTTPException(
@@ -164,6 +163,7 @@ async def start_conversation(
             raise HTTPException(401, "Invalid API key.")
 
         user = None
+        id_token = None
 
     else:
         raise HTTPException(401, "Missing credentials.")
@@ -174,7 +174,7 @@ async def start_conversation(
     else:
         is_paid = False
 
-    (chat_id, response) = await start_chat(flow, text_format, user)
+    (chat_id, response) = await start_chat(flow, text_format, user, id_token)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),
