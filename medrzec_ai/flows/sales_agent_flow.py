@@ -10,18 +10,14 @@ from .flow import Flow, FlowResponse
 
 class SalesAgentChat(Flow):
     def __init__(self, db: Database, user: User | None) -> None:
-        # TODO: Only add paid conversation stages if user is paid
-        self.conversation_stages = CONVERSATION_STAGES + PAID_CONVERSATION_STAGES
+        self.conversation_stages = CONVERSATION_STAGES
         self.db = db
         self.lastQuestion = None
         llm = OpenAI(model_name="gpt-4", temperature=0.5)
         self.user = user
         self.agent = Agent(
-            stage_analyzer_chain=StageAnalyzerChain.from_llm(
-                llm, self.conversation_stages
-            ),
+            stage_analyzer_chain=StageAnalyzerChain.from_llm(llm),
             conversation_chain=ConversationChain.from_llm(llm),  # type: ignore
-            conversation_stages=self.conversation_stages,
         )
 
     async def start_conversation(self) -> FlowResponse[str]:
@@ -29,6 +25,11 @@ class SalesAgentChat(Flow):
         return FlowResponse(response)
 
     async def submit_message(self, message: str) -> FlowResponse[list[str]]:
+        if self.user and self.db.get_purchases(self.user.id):
+            self.conversation_stages = (
+                CONVERSATION_STAGES[:-1] + PAID_CONVERSATION_STAGES
+            )
+
         response = self.agent.step(message)
         current_stage = self.conversation_stages[self.agent.current_stage]
 
