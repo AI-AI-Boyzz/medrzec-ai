@@ -9,3 +9,4 @@ stripe~=5.4.0
 SQLAlchemy~=2.0.0
 alembic~=1.11.0
 python-dotenv~=1.0.0
+google-cloud-language

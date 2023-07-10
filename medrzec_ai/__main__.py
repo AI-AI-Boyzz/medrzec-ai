@@ -17,7 +17,7 @@ from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-
+from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
 from . import FlowEnum
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
@@ -78,7 +78,9 @@ class StripeWebhookRequest(BaseModel):
 
 
 async def start_chat(
-    flow: FlowEnum, text_format: TextFormat
+    flow: FlowEnum,
+    text_format: TextFormat,
+    user: User,
 ) -> tuple[str, FlowResponse]:
     match flow:
         case FlowEnum.QUESTIONS_AND_PLAYBOOK:
@@ -91,6 +93,8 @@ async def start_chat(
             chat = RemoteWorkScoreAndPlaybookChat(TeamRoles.PEOPLE_LEADER, text_format)
         case FlowEnum.AWESOME:
             chat = AwesomeChat()
+        case FlowEnum.INTERVIEW_FLOW:
+            chat = SalesAgentChat(db, user)
 
     chat_id = uuid4().hex
     response = await chat.start_conversation()
@@ -130,8 +134,7 @@ async def index():
 async def flow_suggestions():
     return FlowSuggestionsResponse(
         flow_suggestions=[
-            FlowEnum.REMOTE_WORK_SCORE_INTRO.as_suggestion(),
-            FlowEnum.QUESTIONS_AND_PLAYBOOK.as_suggestion(),
+            FlowEnum.INTERVIEW_FLOW.as_suggestion(),
         ]
     )
 
@@ -147,7 +150,7 @@ async def start_conversation(
         token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
 
-        if user is None:
+        if not os.getenv("ALLOW_ALL_EMAILS") in ("true", "1") and user is None:
             raise HTTPException(
                 401,
                 "Your email is not approved yet. "
@@ -169,7 +172,7 @@ async def start_conversation(
     else:
         is_paid = False
 
-    (chat_id, response) = await start_chat(flow, text_format)
+    (chat_id, response) = await start_chat(flow, text_format, user)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),
