@@ -5,15 +5,21 @@ import hmac
 import os
 import secrets
 from asyncio import Lock
+from typing import Annotated
 from uuid import uuid4
 
 import dotenv
 import httpx
 import sqlalchemy.exc
-from fastapi import FastAPI, HTTPException, Response
+import stripe
+import stripe.error
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+
 from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
+
 from . import FlowEnum
 from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
@@ -32,6 +38,7 @@ active_conversations: dict[str, tuple[Flow, Lock]] = {}
 db = Database()
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
+stripe.api_key = os.environ["STRIPE_API_KEY"]
 client = httpx.AsyncClient()
 emoji_replacer = EmojiReplacer()
 
@@ -46,6 +53,7 @@ class StartChatResponse(BaseModel):
     chat_id: str
     message: str
     flow_suggestions: list[FlowSuggestion] | None
+    is_paid: bool
 
 
 class SendMessageResponse(BaseModel):
@@ -64,6 +72,11 @@ class AddUserRequest(BaseModel):
 class DeleteUserRequest(BaseModel):
     api_key: str
     email: str
+
+
+class StripeWebhookRequest(BaseModel):
+    type: str
+    data: dict[str, str]
 
 
 async def start_chat(
@@ -123,8 +136,6 @@ async def index():
 async def flow_suggestions():
     return FlowSuggestionsResponse(
         flow_suggestions=[
-            FlowEnum.REMOTE_WORK_SCORE_INTRO.as_suggestion(),
-            FlowEnum.QUESTIONS_AND_PLAYBOOK.as_suggestion(),
             FlowEnum.INTERVIEW_FLOW.as_suggestion(),
         ]
     )
@@ -141,7 +152,7 @@ async def start_conversation(
         token_info = await fetch_token(id_token)
         user = db.get_user(token_info["email"])
 
-        if not os.getenv("ALLOW_ALL_EMAILS") in ("true", "1") and user is None:
+        if os.getenv("ALLOW_ALL_EMAILS") not in ("true", "1") and user is None:
             raise HTTPException(
                 401,
                 "Your email is not approved yet. "
@@ -152,14 +163,23 @@ async def start_conversation(
         if not check_service_key(api_key):
             raise HTTPException(401, "Invalid API key.")
 
+        user = None
+
     else:
         raise HTTPException(401, "Missing credentials.")
+
+    if user is not None:
+        purchases = db.get_purchases(user.id)
+        is_paid = bool(purchases)
+    else:
+        is_paid = False
 
     (chat_id, response) = await start_chat(flow, text_format, user)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),
         flow_suggestions=response.flow_suggestions,
+        is_paid=is_paid,
     )
 
 
@@ -204,6 +224,48 @@ async def delete_user(request: DeleteUserRequest):
 
     with contextlib.suppress(sqlalchemy.exc.IntegrityError):
         db.delete_user(request.email)
+
+
+@app.get("/checkout-session")
+async def create_checkout(user_token: str):
+    token = await fetch_token(user_token)
+    email = token["email"]
+
+    checkout_session = stripe.checkout.Session.create(
+        line_items=[
+            {
+                "price": "remote-how-ai-production",
+                "quantity": 1,
+            },
+        ],
+        mode="payment",
+        success_url=os.environ["STRIPE_REDIRECT_URL"],
+        customer_email=email,
+    )
+
+    return RedirectResponse(checkout_session.url)
+
+
+@app.post("/stripe-webhooks")
+async def stripe_webhook(request: Request, stripe_signature: Annotated[str, Header()]):
+    try:
+        event = stripe.Webhook.construct_event(
+            await request.body(), stripe_signature, os.environ["STRIPE_WEBHOOK_SECRET"]
+        )
+    except stripe.error.SignatureVerificationError as e:
+        raise HTTPException(400, "Invalid signature.") from e
+
+    if event.type != "checkout.session.completed":
+        return Response(status_code=204)
+
+    user = db.get_user(event.data.object.customer_details.email)
+
+    if user is None:
+        raise HTTPException(404, "User not found.")
+
+    db.add_purchase(user.id)
+
+    return Response(status_code=204)
 
 
 @app.get("/slack")

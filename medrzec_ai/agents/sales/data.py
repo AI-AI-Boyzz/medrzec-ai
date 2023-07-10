@@ -60,7 +60,7 @@ Start with the following message:
     ConversationStage(
         title="Done",
         prompt="Refuse further requests from the user and provide only basic information about the product/service.",
-    )
+    ),
 ]
 
 PAID_CONVERSATION_STAGES = [

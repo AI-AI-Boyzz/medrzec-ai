@@ -1,12 +1,14 @@
 from __future__ import annotations
+
+import re
 from dataclasses import dataclass, field
+
 from langchain import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 from langchain.schema import BaseLLMOutputParser, Generation
-import re
 
-from .data import STAGE_ANALYZER_PROMPT, CONVERSATION_PROMPT
+from .data import CONVERSATION_PROMPT, CONVERSATION_STAGES, STAGE_ANALYZER_PROMPT
 
 MESSAGES_HARD_LIMIT = 100
 
@@ -15,15 +17,15 @@ MESSAGES_HARD_LIMIT = 100
 class Agent:
     stage_analyzer_chain: StageAnalyzerChain
     conversation_chain: ConversationChain
-    conversation_stages: list[str]
     conversation_history: list[str] = field(default_factory=list)
     current_stage: int = 0
 
     def step(self, user_message: str) -> str:
         self.conversation_history.append(f"User: {user_message}")
+        self.conversation_history = self.conversation_history[-20:]
 
         if len(self.conversation_history) >= MESSAGES_HARD_LIMIT:
-            self.current_stage = len(self.conversation_stages) - 1
+            self.current_stage = len(CONVERSATION_STAGES) - 1
         else:
             self.current_stage = int(
                 self.stage_analyzer_chain(
@@ -31,14 +33,16 @@ class Agent:
                         "conversation_history": "\n".join(self.conversation_history),
                         "conversation_stages": "\n-------\n".join(
                             f"{i}: {stage.title}:\n{stage.prompt}"
-                            for i, stage in enumerate(self.conversation_stages)
+                            for i, stage in list(enumerate(CONVERSATION_STAGES))[
+                                self.current_stage : self.current_stage + 1
+                            ]
                         ),
                         "conversation_stage_id": self.current_stage or "(none)",
                     }
                 )["text"]
             )
 
-        current_conversation_stage = self.conversation_stages[self.current_stage]
+        current_conversation_stage = CONVERSATION_STAGES[self.current_stage]
 
         ai_message = self.conversation_chain(
             {
@@ -55,7 +59,7 @@ class Agent:
 
 class StageAnalyzerChain(LLMChain):
     @classmethod
-    def from_llm(cls, llm: BaseLLM, conversation_stages: list[str], verbose: bool = False) -> LLMChain:
+    def from_llm(cls, llm: BaseLLM, verbose: bool = False) -> LLMChain:
         prompt = PromptTemplate(
             template=STAGE_ANALYZER_PROMPT,
             input_variables=[
@@ -68,7 +72,7 @@ class StageAnalyzerChain(LLMChain):
             prompt=prompt,
             llm=llm,
             verbose=verbose,
-            output_parser=StageAnalyzerOutputParser(conversation_stages),
+            output_parser=StageAnalyzerOutputParser(),
         )
 
 
@@ -90,12 +94,6 @@ class ConversationChain(LLMChain):
 
 
 class StageAnalyzerOutputParser(BaseLLMOutputParser[int]):
-    conversation_stages: list[str]
-    __fields_set__ = {"conversation_stages"}
-
-    def __init__(self, conversation_stages: list[str]):
-        self.conversation_stages = conversation_stages
-
     def parse_result(self, result: list[Generation]) -> int:
         index = int(re.search(r"\d+", result[0].text).group())
-        return min(index, len(self.conversation_stages) - 1)
+        return min(index, len(CONVERSATION_STAGES) - 1)

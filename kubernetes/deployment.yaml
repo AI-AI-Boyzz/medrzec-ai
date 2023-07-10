@@ -81,3 +81,18 @@ spec:
                 secretKeyRef:
                   name: api
                   key: SLACK_REDIRECT_URI
+            - name: STRIPE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: STRIPE_API_KEY
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: STRIPE_WEBHOOK_SECRET
+            - name: STRIPE_REDIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api
+                  key: STRIPE_REDIRECT_URL

@@ -1,9 +1,10 @@
 from langchain import OpenAI
-from medrzec_ai.agents.sales.agent import Agent, StageAnalyzerChain
-from medrzec_ai.agents.sales.agent import ConversationChain
+
+from medrzec_ai.agents.sales.agent import Agent, ConversationChain, StageAnalyzerChain
 from medrzec_ai.agents.sales.data import CONVERSATION_STAGES, PAID_CONVERSATION_STAGES
 from medrzec_ai.apis.sentiment import analyze_sentiment
 from medrzec_ai.database import Answer, Database, User
+
 from .flow import Flow, FlowResponse
 
 
@@ -16,7 +17,9 @@ class SalesAgentChat(Flow):
         llm = OpenAI(model_name="gpt-4", temperature=0.5)
         self.user = user
         self.agent = Agent(
-            stage_analyzer_chain=StageAnalyzerChain.from_llm(llm, self.conversation_stages),
+            stage_analyzer_chain=StageAnalyzerChain.from_llm(
+                llm, self.conversation_stages
+            ),
             conversation_chain=ConversationChain.from_llm(llm),  # type: ignore
             conversation_stages=self.conversation_stages,
         )
