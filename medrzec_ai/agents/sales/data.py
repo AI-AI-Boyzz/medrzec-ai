@@ -32,30 +32,40 @@ In just 5 minutes, I will generate a 360-degree analysis and personalized recomm
 Are you ready?!""",
     ),
     ConversationStage(
-        title="Qualification",
+        title="Organization",
         topic=InterviewTopic.ORGANIZATION,
-        prompt="""Start the free assessment
-
-You want to calculate the user's Distributed Work Score. Based on their answers, provide them with a very insightful,
-personalized report, including benchmarks to other knowledge workers.
-
-Assess their distributed work conditions by asking questions in 8 different areas:
-Communication, Collaboration, Leadership, Job Satisfaction, Company Culture, Transparency, Well-being, Adaptation, Work management.
-
-If someone is not sure, briefly explain how our product/service can benefit the prospect. Focus on the unique selling points and value proposition of your product/service that sets it apart from competitors.
-
-Please note that during the assessment, you should ask relevant follow-up questions to clarify my responses, if necessary. Your questions should be open-ended and encourage me to provide detailed and honest responses.
-
-Also, please ensure that your questions cover all areas listed and are designed to assess my current remote work conditions and challenges accurately. Your questions should help to generate valuable insights and data that can be used to enhance my remote work experience.
-
-Start with the following message:
-- Let's calculate your Distributed Work Score. Based on your answers, I will provide you with a very insightful, personalized report, including benchmarks to other knowledge workers.
-- We assess your distributed work conditions by asking questions in 8 different areas such as: Communication, Collaboration, Leadership, Job Satisfaction, Company Culture, Transparency, Well-being, Adaptation, Work management.
-- Feel free to message me in any language, using words or numbers. Please note, my responses may take up to 10 seconds, but I promise it's worth the wait!""",
+        prompt="After the user has provided sufficient details about their organization's structure (that means answering at least 3 different questions from that field), or if they express a desire to move on, transition to the topic of Communication. Ask about the effectiveness of communication within the user's team.",
+    ),
+    ConversationStage(
+        title="Communication",
+        topic=InterviewTopic.COMMUNICATION,
+        prompt="When the user has given enough information about communication practices (that means answering at least 3 different questions from that field) or expresses readiness to switch topics, shift the conversation from Communication to Leadership. Inquire about the leadership style within the user's organization.",
+    ),
+    ConversationStage(
+        title="Leadership",
+        topic=InterviewTopic.LEADERSHIP,
+        prompt="Once the user has described their experience with leadership (that means answering at least 3 different questions from that field) or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
+    ),
+    ConversationStage(
+        title="Culture and Values",
+        topic=InterviewTopic.CULTURE_AND_VALUES,
+        prompt="Once the user has described their experience with leadership (that means answering at least 3 different questions from that field) or indicates they are ready for the next topic, move from discussing Leadership to the topic of Culture and Values. Request the user to describe the values that define their company's culture.",
+    ),
+    ConversationStage(
+        title="Culture and Values",
+        topic=InterviewTopic.CULTURE_AND_VALUES,
+        prompt="After the user has detailed their organization's culture and values (that means answering at least 3 different questions from that field), or shows readiness to proceed, transition from discussing Culture and Values to the topic of Wellbeing. Ask how the user's organization promotes the wellbeing of its employees.",
     ),
     ConversationStage(
         title="Score generation",
-        prompt="Based on the responses, please compute a personal Distributed Work Score (0-100)",
+        prompt="""
+Based on the user reponse calculate thier remote work score (0 - 100) and present it in the format of <USER-SCORE>/100 
+Encourage the user to donate to the Remote-First Institute if they want to get more in-depth results, and personalized recommendations. Make sure you ask a apealing question to get the user attention - leverage the context data you have.
+
+Make sure that the text is using the markdown language to make it pretty and use emotes to decorate it.
+
+After displaying the score and the related info, please transition to the done stage.
+""",
     ),
     ConversationStage(
         title="Done",
