@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import List
+from typing import Sequence
 
 from sqlalchemy import ForeignKey, create_engine, delete, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
@@ -61,7 +61,6 @@ class Purchase(Base):
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(os.environ["DATABASE_PATH"])
-        Base.metadata.create_all(self.engine)
 
     def add_user(self, user: User):
         with Session(self.engine) as session:
@@ -86,7 +85,7 @@ class Database:
             session.add(Purchase(user_id=user_id))
             session.commit()
 
-    def get_purchases(self, user_id: int) -> list[Purchase]:
+    def get_purchases(self, user_id: int) -> Sequence[Purchase]:
         with Session(self.engine) as session:
             return session.scalars(
                 select(Purchase).where(Purchase.user_id == user_id)
@@ -101,11 +100,11 @@ class Database:
                 .group_by(Answer.topic)
             ).all()
 
-            organization = [x for x in elo if x.topic == InterviewTopic.ORGANIZATION]
-            comunication = [x for x in elo if x.topic == InterviewTopic.COMMUNICATION]
-            leadership = [x for x in elo if x.topic == InterviewTopic.LEADERSHIP]
-            culture = [x for x in elo if x.topic == InterviewTopic.CULTURE_AND_VALUES]
-            welbeing = [x for x in elo if x.topic == InterviewTopic.WELLBEING]
+            organization = [x for x in elo if x.topic is InterviewTopic.ORGANIZATION]
+            comunication = [x for x in elo if x.topic is InterviewTopic.COMMUNICATION]
+            leadership = [x for x in elo if x.topic is InterviewTopic.LEADERSHIP]
+            culture = [x for x in elo if x.topic is InterviewTopic.CULTURE_AND_VALUES]
+            welbeing = [x for x in elo if x.topic is InterviewTopic.WELLBEING]
 
             organizationScore = sum(
                 map(lambda x: points_from_score(x.score), organization)
@@ -119,14 +118,14 @@ class Database:
                 map(lambda x: points_from_score(x.score), leadership)
             ) / ((len(leadership)) * 5)
 
-            if (len(welbeing)) == 0:
+            if not welbeing:
                 welbeingScore = 0
             else:
                 welbeingScore = sum(
                     map(lambda x: points_from_score(x.score), welbeing)
                 ) / ((len(welbeing)) * 5)
 
-            if len(culture) == 0:
+            if not culture:
                 cultureScore = 0
             else:
                 cultureScore = sum(

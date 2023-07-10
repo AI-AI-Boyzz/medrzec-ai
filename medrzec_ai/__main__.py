@@ -4,21 +4,22 @@ import contextlib
 import hmac
 import os
 import secrets
-import stripe
 from asyncio import Lock
-from uuid import uuid4
 from typing import Annotated
+from uuid import uuid4
 
 import dotenv
 import httpx
 import sqlalchemy.exc
-from fastapi import FastAPI, HTTPException, Request, Response, Header 
+import stripe
+import stripe.error
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from medrzec_ai.flows.sales_agent_flow import SalesAgentChat
 from . import FlowEnum
-from .database import Database, User, Purchase
+from .database import Database, User
 from .flows.awesome_chat import AwesomeChat
 from .flows.flow import Flow, FlowResponse, FlowSuggestion
 from .flows.question_and_playbook_chat import QuestionAndPlaybookChat
@@ -160,17 +161,23 @@ async def start_conversation(
         if not check_service_key(api_key):
             raise HTTPException(401, "Invalid API key.")
 
+        user = None
+
     else:
         raise HTTPException(401, "Missing credentials.")
-    
-    purchases = db.get_purchases(user.id)
+
+    if user is not None:
+        purchases = db.get_purchases(user.id)
+        is_paid = bool(purchases)
+    else:
+        is_paid = False
 
     (chat_id, response) = await start_chat(flow, text_format, user)
     return StartChatResponse(
         chat_id=chat_id,
         message=emoji_replacer.replace_emojis(response.response),
         flow_suggestions=response.flow_suggestions,
-        is_paid=bool(purchases),
+        is_paid=is_paid,
     )
 
 
@@ -217,36 +224,44 @@ async def delete_user(request: DeleteUserRequest):
         db.delete_user(request.email)
 
 
-@app.post("/checkout-session")
-async def create_checkout(user_token: str) -> str:
-    token = (await fetch_token(user_token))
+@app.get("/checkout-session")
+async def create_checkout(user_token: str):
+    token = await fetch_token(user_token)
     email = token["email"]
 
     checkout_session = stripe.checkout.Session.create(
-    line_items=[
-        {
-            'price': "remote-how-ai-production",
-            'quantity': 1,
-        },
-    ],
-    mode='payment',
-    success_url=os.environ["STRIPE_REDIRECT_URL"],
-    customer_email=email,
+        line_items=[
+            {
+                "price": "remote-how-ai-production",
+                "quantity": 1,
+            },
+        ],
+        mode="payment",
+        success_url=os.environ["STRIPE_REDIRECT_URL"],
+        customer_email=email,
     )
-    return checkout_session.url
+
+    return RedirectResponse(checkout_session.url)
 
 
 @app.post("/stripe-webhooks")
 async def stripe_webhook(request: Request, stripe_signature: Annotated[str, Header()]):
     try:
-        event = stripe.Webhook.construct_event(await request.body(), stripe_signature, os.environ["STRIPE_WEBHOOK_SECRET"])
-        user = db.get_user(event.data.object.customer_details.email)
-        if user is None:
-            raise HTTPException(404, "User not found.")
+        event = stripe.Webhook.construct_event(
+            await request.body(), stripe_signature, os.environ["STRIPE_WEBHOOK_SECRET"]
+        )
     except stripe.error.SignatureVerificationError as e:
         raise HTTPException(400, "Invalid signature.") from e
 
-    db.add_purchase(user.id) 
+    if event.type != "checkout.session.completed":
+        return Response(status_code=204)
+
+    user = db.get_user(event.data.object.customer_details.email)
+
+    if user is None:
+        raise HTTPException(404, "User not found.")
+
+    db.add_purchase(user.id)
 
     return Response(status_code=204)
 
