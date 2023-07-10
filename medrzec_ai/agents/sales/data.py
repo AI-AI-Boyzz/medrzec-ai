@@ -59,7 +59,7 @@ Are you ready?!""",
     ConversationStage(
         title="Score generation",
         prompt="""
-Based on the user reponse calculate thier Distributed Work Score (0 - 100) and present it in the format of <USER-SCORE>/100 
+Based on the user reponse calculate thier Distributed Work Score (0 - 100) and present it in the format of <USER-SCORE>/100
 Encourage the user to donate to the Remote-First Institute if they want to get more in-depth results, and personalized recommendations. Make sure you ask a apealing question to get the user attention - leverage the context data you have.
 
 Make sure that the text is using the markdown language to make it pretty and use emotes to decorate it.

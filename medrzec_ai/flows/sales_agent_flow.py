@@ -50,8 +50,7 @@ class SalesAgentChat(Flow):
         if CONVERSATION_STAGES[self.agent.current_stage].title == "Score generation":
             url = f"https://ai-mentor-api.remote-first.institute/checkout-session?user_token={self.user_token}"
             messages.append(
-                "Wanna unlock more insights and personalized recommendations? "
-                f"Get access to **Distributed Work Pro Insights** — [donate now]({url})."
+                f"Unlock access to your personalized [**Distributed Work: Pro Insights**]({url})."
             )
 
         self.lastQuestion = response
